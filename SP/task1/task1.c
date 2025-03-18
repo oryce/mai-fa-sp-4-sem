@@ -299,20 +299,44 @@ bool ValidateTime(char* time) {
 	return true;
 }
 
-kErrors PrintTime(){
+
+struct tm* GetTimeAndDate() {
     time_t t = time(NULL);
     struct tm* now = localtime(&t);
+    return now;
+}
+
+kErrors PrintTime(){
+    struct tm* now = GetTimeAndDate();
     char buf[100];
-    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S\n", now);
-    printf("Time: %s", buf);
+    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S", now);
+    printf("Time: %s\n", buf);
 }
 
 kErrors PrintDate(){
-    time_t t = time(NULL);
-    struct tm* now = localtime(&t);
+    struct tm* now = GetTimeAndDate();
     char buf[100];
-    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S\n", now);
+    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S", now);
     printf("Date: %s\n", buf);
+}
+
+long double GetPassedSeconds(char* ttime, char* flag) {
+    struct tm time_inp = ConvertToTm(ttime);
+    struct tm* pointer = &time_inp;
+    time_t now = time(NULL);
+    long double res;
+    if (strcmp(flag, "-s") == 0) {
+        res = difftime(now, mktime(pointer));
+    }
+    else if (strcmp(flag, "-m") == 0) {
+        res = difftime(now, mktime(pointer)) / 60.0;
+    }
+    else if (strcmp(flag, "-h") == 0) {
+        res = difftime(now, mktime(pointer)) /60.0 /60.0;
+    }
+    else if (strcmp(flag, "-y") == 0) {
+        res = difftime(now, mktime(pointer)) / 60.0 / 60.0 / 24.0 / 365.0;
+    }
 }
 
 kErrors HowMuch(char* ttime, char* flag){
@@ -323,21 +347,14 @@ kErrors HowMuch(char* ttime, char* flag){
     struct tm* pointer = &time_inp;
     time_t now = time(NULL);
     long double res;
-    if (strcmp(flag, "-s") == 0){
-        res = difftime(now, mktime(pointer));
-        printf("%Lf seconds passed\n", res);
-    } else if (strcmp(flag, "-m") == 0){
-        res = difftime(now, mktime(pointer));
-        printf("%Lf minutes passed\n", res / 60.0);
-    } else if (strcmp(flag, "-h") == 0){
-        res = difftime(now, mktime(pointer));
-        printf("%Lf hours passed\n", res/60/60);
-    } else if (strcmp(flag, "-y") == 0){
-        res = difftime(now, mktime(pointer));
-        printf("%Lf years passed\n", res/60/60/24/365);
-    } else{
+    if (!strcmp(flag, "-s") == 0 &&
+        !strcmp(flag, "-m") == 0 &&
+        !strcmp(flag, "-h") == 0 &&
+        !strcmp(flag, "-y") == 0)
+    {
         return INC_INPUT;
     }
+    res = GetPassedSeconds(ttime, flag);
     return OK;
 }
 
