@@ -278,11 +278,13 @@ struct tm ConvertToTm(char* time) {
 }
 
 bool ValidateTime(char* time) {
-	int d, M, y, h, m, s;
-	int nd, nM, ny, nh, nm, ns;
+    int d = 0, M = 0, y = 0, h = 0, m = 0, s = 0;
+    int nd = 0, nM = 0, ny = 0, nh = 0, nm = 0, ns = 0;
 
-	sscanf(time, "%*[0-9]%n:%*[0-9]%n:%*[0-9]%n %*[0-9]%n:%*[0-9]%n:%*[0-9]%n", &nd, &nM, &ny, &nh, &nm, &ns);
-
+    if (strlen(time) != 19) {
+        return false;
+    }
+    sscanf(time, "%*[0-9]%n:%*[0-9]%n:%*[0-9]%n %*[0-9]%n:%*[0-9]%n:%*[0-9]%n", &nd, &nM, &ny, &nh, &nm, &ns);
 	if (nd != 2 || nm != 16 || ny != 10 || nh != 13 || nM != 5 || ns != 19) {
 		return false;
 	}
@@ -309,14 +311,14 @@ struct tm* GetTimeAndDate() {
 kErrors PrintTime(){
     struct tm* now = GetTimeAndDate();
     char buf[100];
-    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S", now);
+    strftime(buf, 100, "%H:%M:%S", now);
     printf("Time: %s\n", buf);
 }
 
 kErrors PrintDate(){
     struct tm* now = GetTimeAndDate();
     char buf[100];
-    strftime(buf, 100, "%d:%m:%Y:%H:%M:%S", now);
+    strftime(buf, 100, "%d:%m:%Y", now);
     printf("Date: %s\n", buf);
 }
 
@@ -355,6 +357,7 @@ kErrors HowMuch(char* ttime, char* flag){
         return INC_INPUT;
     }
     res = GetPassedSeconds(ttime, flag);
+    printf("%Lf\n", res);
     return OK;
 }
 
@@ -414,6 +417,7 @@ kErrors ProccessCommands(char* command, vector* v, user* current_user){
                 free(tmp);
                 return status;
             }
+            return INC_INPUT;
         }
         else if (strcmp(l1, "Sanctions") == 0) {
             if (l2 != NULL && l3 != NULL && l4 == NULL) {
@@ -474,7 +478,7 @@ kErrors GoToLogPage(vector* user_vector){
     user* cur_user;
     while (true)
     {
-        printf("Type r for registration and l to login\n");
+        printf("Type r for registration, l to login, e to exit the application\n");
         c = scanf("%c%c", &op, &check);
         if (c != 2 || check != '\n'){
             ProccessError(INC_INPUT);
