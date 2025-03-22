@@ -228,6 +228,7 @@ int main(int argsc, char **args)
     sem_id = semget(key_sem, 1, IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
     if (sem_id == -1)
     {
+        free(t);
         return 1;
     }
 
@@ -240,11 +241,13 @@ int main(int argsc, char **args)
         status = pthread_create(&t[i], NULL, manage_gender, "w");
         if (status != 0)
         {
+            free(t);
             return 1;
         }
         status = pthread_create(&t[TEST_NUMBER + i], NULL, manage_gender, "m");
         if (status != 0)
         {
+            free(t);
             return 1;
         }
     }
@@ -254,11 +257,13 @@ int main(int argsc, char **args)
         status = pthread_join(t[i], NULL);
         if (status != 0)
         {
+            free(t);
             return 1;
         }
     }
 
     pthread_mutex_destroy(&mutex);
     semctl(sem_id, 0, IPC_RMID);
+    free(t);
     return 0;
 }
