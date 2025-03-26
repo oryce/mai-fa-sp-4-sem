@@ -3,9 +3,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdbool.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 
 #define ll long long int
 #define ull unsigned long long int
@@ -147,7 +149,7 @@ char* read_line(FILE* fin) {
 	size_t read_chars = 0;
 	char* line = malloc(bufsize * sizeof(char));
 	if (!line) {
-		return nullptr;
+		return NULL;
 	}
 	char ch;
 	while ((ch = fgetc(fin)) != EOF) {
@@ -156,7 +158,7 @@ char* read_line(FILE* fin) {
 			char* tmp = realloc(line, bufsize);
 			if (!tmp) {
 				free(line);
-				return nullptr;
+				return NULL;
 			}
 			line = tmp;
 		}
@@ -167,7 +169,7 @@ char* read_line(FILE* fin) {
 	}
 	if (read_chars == 0 && ch == EOF) {
 		free(line);
-		return nullptr;
+		return NULL;
 	}
 	line[read_chars] = '\0';
 	return line;
@@ -176,15 +178,17 @@ char* read_line(FILE* fin) {
 int search_in_file(FILE* file, const char* str) {
 	char* line;
 	int line_number = 0;
+	int found_line = -1;
 	while (line = read_line(file)) {
 		line_number++;
 		if (strstr(line, str)) {
+			found_line = line_number;
 			free(line);
-			return line_number;
+			break;
 		}
 		free(line);
 	}
-	return -1;
+	return found_line;
 }
 
 bool find_string(char** names, FILE** files, const char* str, const int count) {
@@ -241,7 +245,9 @@ int main(int argc, char** argv) {
 		descriptors[i - 1] = fopen(argv[i], "r");
 		if (descriptors[i - 1] == NULL) {
 			fprintf(stderr, "Error opening file: %s\n", argv[i]);
-			close_files(descriptors, i - 2);
+			if (i != 1) {
+				close_files(descriptors, i - 2);
+			}
 			free(descriptors);
 			return 1;
 		}
@@ -286,7 +292,7 @@ int main(int argc, char** argv) {
 		}
 		char* endptr;
 		const ull mask_value = strtoull(mask, &endptr, 16);
-		if (*endptr != '\0') {
+		if (*endptr != '\0' || errno == ERANGE) {
 			fprintf(stderr, "The mask must be a positive number\n");
 			close_files(descriptors, number_of_files);
 			free(descriptors);
@@ -307,7 +313,7 @@ int main(int argc, char** argv) {
 			char* endptr;
 			const char* num_str = flag + 4;
 			long quantity = strtol(num_str, &endptr, 10);
-			if (*endptr != '\0' || quantity > 20) {
+			if (*endptr != '\0' || quantity > 20 || errno == ERANGE) {
 				printf("Usage: ./main {file1} {file2} ... {copyN}\n");
 				close_files(descriptors, number_of_files);
 				free(descriptors);
