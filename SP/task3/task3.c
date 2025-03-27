@@ -178,7 +178,8 @@ int main(void)
         // for (int l = 0; l < 3; l++)
         // {
         //     take_fork(p.id - 1, p.id);
-        //     take_fork(p.id - 1, p.id);
+        //     sleep(1);
+        //     take_fork(p.id + 1, p.id);
         //     sleep(1);
         //     return_fork(p.id - 1);
         //     return_fork(p.id + 1);

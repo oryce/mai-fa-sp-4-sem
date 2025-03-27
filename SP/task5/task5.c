@@ -189,8 +189,8 @@ void *manage_gender(void *gender)
     }
     long a;    
     lrand48_r(&buf, &a);
-    a = a % 10;
-    printf("%ld\n", a);
+    a = a % 5;
+    // printf("%ld\n", a);
     sleep(a);
     if (g == "m"){
         woman_leave(&cur_state, sem_id, max_in_room);
