@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <limits.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdbool.h>
@@ -59,37 +58,9 @@ ll count_masked_numbers(FILE* file, const ull mask) {
 	return count;
 }
 
-bool copy(const char* src_filename, const char* dst_filename) {
-	FILE* src_file = fopen(src_filename, "rb");
-	if (!src_file) {
-		return false;
-	}
-
-	FILE* dst_file = fopen(dst_filename, "wb");
-	if (!dst_file) {
-		fclose(src_file);
-		return false;
-	}
-
-	char buffer[1024];
-	size_t bytes_read;
-	while ((bytes_read = fread(buffer, 1, sizeof(buffer), src_file))) {
-		if (fwrite(buffer, 1, bytes_read, dst_file) != bytes_read) {
-			fclose(src_file);
-			fclose(dst_file);
-			return false;
-		}
-	}
-	fclose(src_file);
-	fclose(dst_file);
-	return true;
-}
-
 bool copy_file(const size_t count, const char* name_src) {
 	const char* dot = strrchr(name_src, '.');
-	if (!dot) {
-		dot = name_src + strlen(name_src);
-	}
+	if (!dot) dot = name_src + strlen(name_src);
 
 	char* base_name = malloc(strlen(name_src));
 	if (!base_name) {
@@ -99,10 +70,10 @@ bool copy_file(const size_t count, const char* name_src) {
 	const size_t base_len = dot - name_src;
 	strncpy(base_name, name_src, base_len);
 	base_name[base_len] = '\0';
-
 	const char* extension = dot;
 
 	pid_t pids[count];
+	bool success = true;
 
 	for (size_t i = 0; i < count; ++i) {
 		char* new_filename = malloc(strlen(name_src) + 10);
@@ -120,115 +91,80 @@ bool copy_file(const size_t count, const char* name_src) {
 		}
 
 		if (pid == 0) {
-			if (!copy(name_src, new_filename)) {
-				free(new_filename);
-				exit(EXIT_FAILURE);
-			}
-			free(new_filename);
-			exit(EXIT_SUCCESS);
+			char* args[] = {"./copy", (char*)name_src, new_filename, NULL};
+			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
 			free(new_filename);
 		}
 	}
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0; i < count; ++i) {
 		int status;
 		waitpid(pids[i], &status, 0);
-		if (!(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)) {
-			free(base_name);
-			return false;
-		}
-	}
-	free(base_name);
-	return true;
-}
 
-char* read_line(FILE* fin) {
-	size_t bufsize = INITIAL_ALLOC;
-	size_t read_chars = 0;
-	char* line = malloc(bufsize * sizeof(char));
-	if (!line) {
-		return NULL;
-	}
-	char ch;
-	while ((ch = fgetc(fin)) != EOF) {
-		if (read_chars + 1 >= bufsize) {
-			bufsize *= 2;
-			char* tmp = realloc(line, bufsize);
-			if (!tmp) {
-				free(line);
-				return NULL;
+		if (WIFEXITED(status)) {
+			if (WEXITSTATUS(status) != 0) {
+				success = false;
 			}
-			line = tmp;
+		} else {
+			success = false;
 		}
-		if (ch == '\n') {
-			break;
-		}
-		line[read_chars++] = ch;
 	}
-	if (read_chars == 0 && ch == EOF) {
-		free(line);
-		return NULL;
-	}
-	line[read_chars] = '\0';
-	return line;
-}
 
-int search_in_file(FILE* file, const char* str) {
-	char* line;
-	int line_number = 0;
-	int found_line = -1;
-	while (line = read_line(file)) {
-		line_number++;
-		if (strstr(line, str)) {
-			found_line = line_number;
-			free(line);
-			break;
-		}
-		free(line);
-	}
-	return found_line;
+	free(base_name);
+	return success;
 }
 
 bool find_string(char** names, FILE** files, const char* str, const int count) {
 	pid_t pids[count];
 
+	bool success = true;
+
 	for (size_t i = 0; i < count; ++i) {
 		const pid_t pid = fork();
 		if (pid == -1) {
-			return 1;
+			return false;
 		}
+
 		if (pid == 0) {
-			const int res = search_in_file(files[i], str);
-			switch (res) {
-				case INT_MIN:
-					exit(EXIT_FAILURE);
-				case -1:
-					printf("No such string in %s\n", names[i + 1]);
-					break;
-				default:
-					printf("There is a line in the file %s\n", names[i + 1]);
-					break;
-			}
-			exit(EXIT_SUCCESS);
+			char* args[] = {"./find", (char*)names[i + 1], (char*)str, NULL};
+			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
 		}
 	}
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0; i < count; ++i) {
 		int status;
 		waitpid(pids[i], &status, 0);
-		if (!(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)) {
-			return 1;
+
+		if (WIFEXITED(status)) {
+			int exit_code = WEXITSTATUS(status);
+			if (exit_code == 0) {
+				printf("Found in %s\n", names[i + 1]);
+			} else if (exit_code == 1) {
+				printf("Not found in %s\n", names[i + 1]);
+			} else {
+				const char* msg = (exit_code == 2)
+					                  ? "Invalid arguments"
+					                  : (exit_code == 3)
+					                  ? "File open error"
+					                  : "Unknown error";
+				fprintf(stderr, "Error searching %s: %s\n", names[i + 1], msg);
+				success = false;
+			}
+		} else {
+			fprintf(stderr, "Child process failed for %s\n", names[i + 1]);
+			success = false;
 		}
 	}
-	return 0;
+
+	return success;
 }
 
 
-int main(int argc, char** argv) {
+int main(const int argc, char** argv) {
 	if (argc < 3) {
 		fprintf(stderr, "Usage: ./main {file1} {file2} ... {flag}\n");
 		return 1;
@@ -285,7 +221,7 @@ int main(int argc, char** argv) {
 	} else if (strncmp(flag, "mask", 4) == 0) {
 		const char* mask = flag + 4;
 		if (strlen(mask) != 8) {
-			fprintf(stderr, "The mask must be 8 bytes\n");
+			fprintf(stderr, "The mask must be 4 bytes\n");
 			close_files(descriptors, number_of_files);
 			free(descriptors);
 			return 1;
@@ -335,9 +271,7 @@ int main(int argc, char** argv) {
 			free(descriptors);
 			return 1;
 		}
-		if (find_string(argv, descriptors, str, number_of_files)) {
-			fprintf(stderr, "Error with finding string\n");
-		}
+		find_string(argv, descriptors, str, number_of_files);
 	} else {
 		fprintf(stderr, "Unexpected flag: %s\n", flag);
 		close_files(descriptors, number_of_files);
