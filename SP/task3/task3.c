@@ -165,6 +165,7 @@ int main(void)
             check(status);
             status = take_fork(p.id - 1, p.id);
             check(status);
+            // sleep(1);
             status = take_fork(p.id + 1, p.id);
             check(status);
             printf("Philosopher %d is eating\n", p.id);
