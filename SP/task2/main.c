@@ -20,11 +20,10 @@ void close_files(FILE** files, size_t count) {
 
 int xor_blocks(FILE* fd, const size_t block_size, uint8_t* result) {
 	const int bytes = ((block_size + 7) / 8);
-
 	// if block_size == 4 then we xor two parts of array buffer
-	uint8_t buffer[bytes];
 	memset(result, 0, bytes);
 	while (1) {
+		uint8_t buffer[8];
 		const ssize_t read_bytes = fread(buffer, 1, bytes, fd);
 		if (read_bytes == -1) {
 			return -1;
@@ -49,7 +48,7 @@ ll count_masked_numbers(FILE* file, const ull mask) {
 	ull number = 0;
 	while (!feof(file)) {
 		fread(&number, 1, sizeof(number), file);
-		if ((number & mask) == mask) {
+		if (number & mask) {
 			if (count < count++) {
 				return -1;
 			}
@@ -72,13 +71,18 @@ bool copy_file(const size_t count, const char* name_src) {
 	base_name[base_len] = '\0';
 	const char* extension = dot;
 
-	pid_t pids[count];
+	pid_t* pids = malloc(count * sizeof(pid_t));
+	if (!pids) {
+		free(base_name);
+		return false;
+	}
 	bool success = true;
 
 	for (size_t i = 0; i < count; ++i) {
 		char* new_filename = malloc(strlen(name_src) + 10);
 		if (!new_filename) {
 			free(base_name);
+			free(pids);
 			return false;
 		}
 		snprintf(new_filename, strlen(name_src) + 10, "%s_%zu%s", base_name, i + 1, extension);
@@ -87,11 +91,12 @@ bool copy_file(const size_t count, const char* name_src) {
 		if (pid == -1) {
 			free(new_filename);
 			free(base_name);
+			free(pids);
 			return false;
 		}
 
 		if (pid == 0) {
-			char* args[] = {"./copy", (char*)name_src, new_filename, NULL};
+			char* args[] = {"../bin/./copy", (char*)name_src, new_filename, NULL};
 			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
@@ -113,22 +118,27 @@ bool copy_file(const size_t count, const char* name_src) {
 	}
 
 	free(base_name);
+	free(pids);
 	return success;
 }
 
 bool find_string(char** names, FILE** files, const char* str, const int count) {
-	pid_t pids[count];
+	pid_t* pids = malloc(count * sizeof(pid_t));
+	if (!pids) {
+		return false;
+	}
 
 	bool success = true;
 
 	for (size_t i = 0; i < count; ++i) {
 		const pid_t pid = fork();
 		if (pid == -1) {
+			free(pids);
 			return false;
 		}
 
 		if (pid == 0) {
-			char* args[] = {"./find", (char*)names[i + 1], (char*)str, NULL};
+			char* args[] = {"../bin/./find", (char*)names[i + 1], (char*)str, NULL};
 			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
@@ -140,7 +150,7 @@ bool find_string(char** names, FILE** files, const char* str, const int count) {
 		waitpid(pids[i], &status, 0);
 
 		if (WIFEXITED(status)) {
-			int exit_code = WEXITSTATUS(status);
+			const int exit_code = WEXITSTATUS(status);
 			if (exit_code == 0) {
 				printf("Found in %s\n", names[i + 1]);
 			} else if (exit_code == 1) {
@@ -159,7 +169,7 @@ bool find_string(char** names, FILE** files, const char* str, const int count) {
 			success = false;
 		}
 	}
-
+	free(pids);
 	return success;
 }
 
@@ -206,7 +216,7 @@ int main(const int argc, char** argv) {
 				free(descriptors);
 				return 1;
 			}
-			int xor_sum = xor_blocks(descriptors[i], block_size, result);
+			const int xor_sum = xor_blocks(descriptors[i], block_size, result);
 			if (xor_sum == -1) {
 				fprintf(stderr, "Error reading from file: %s\n", argv[i + 1]);
 			} else {

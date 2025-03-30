@@ -3,63 +3,70 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define INITIAL_ALLOC 128
-
-char* read_line(FILE* fin) {
-	size_t bufsize = INITIAL_ALLOC;
-	size_t read_chars = 0;
-	char* line = malloc(bufsize);
-	if (!line) return NULL;
-
-	int ch;
-	while ((ch = fgetc(fin)) != EOF) {
-		if (read_chars + 1 >= bufsize) {
-			bufsize *= 2;
-			char* tmp = realloc(line, bufsize);
-			if (!tmp) {
-				free(line);
-				return NULL;
+void compute_lps(const char *pattern, int *lps, int pattern_len) {
+	int len = 0;
+	lps[0] = 0;
+	for (int i = 1; i < pattern_len; ) {
+		if (pattern[i] == pattern[len]) {
+			len++;
+			lps[i] = len;
+			i++;
+		} else {
+			if (len != 0) {
+				len = lps[len - 1];
+			} else {
+				lps[i] = 0;
+				i++;
 			}
-			line = tmp;
 		}
-		if (ch == '\n') break;
-		line[read_chars++] = ch;
 	}
-
-	if (read_chars == 0 && ch == EOF) {
-		free(line);
-		return NULL;
-	}
-
-	line[read_chars] = '\0';
-	return line;
 }
 
-int main(int argc, char** argv) {
-	if (argc != 3) {
-		return 2; // Special code for invalid arguments
+bool kmp_search(FILE *file, const char *pattern) {
+	int pattern_len = strlen(pattern);
+	if (pattern_len == 0) {
+		return false;
 	}
 
-	FILE* file = fopen(argv[1], "r");
-	if (!file) {
-		return 3; // Special code for file open error
+	int *lps = (int *)malloc(pattern_len * sizeof(int));
+	if (!lps) {
+		return false;
 	}
-
-	const char* search_str = argv[2];
-	int line_number = 0;
-	int found_line = -1;
-	char* line;
-
-	while ((line = read_line(file))) {
-		line_number++;
-		if (strstr(line, search_str)) {
-			found_line = line_number;
-			free(line);
-			break;
+	compute_lps(pattern, lps, pattern_len);
+	int j = 0;
+	int ch;
+	while ((ch = fgetc(file)) != EOF) {
+		while (j > 0 && ch != pattern[j]) {
+			j = lps[j - 1];
 		}
-		free(line);
+
+		if (ch == pattern[j]) {
+			j++;
+		}
+
+		if (j == pattern_len) {
+			free(lps);
+			return true;
+		}
 	}
 
+	free(lps);
+	return false;
+}
+
+int main(int argc, char **argv) {
+	if (argc != 3) {
+		fprintf(stderr, "Usage: %s <filename> <search_string>\n", argv[0]);
+		return 2;
+	}
+	FILE *file = fopen(argv[1], "rb");
+	if (!file) {
+		perror("Failed to open file");
+		return 3;
+	}
+	const char *search_str = argv[2];
+	bool found = kmp_search(file, search_str);
 	fclose(file);
-	return (found_line == -1) ? 1 : 0;
+
+	return found ? 0 : 1;
 }
