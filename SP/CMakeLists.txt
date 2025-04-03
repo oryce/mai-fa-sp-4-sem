@@ -4,6 +4,10 @@ project(sp_lab_1)
 
 set(CMAKE_C_FLAGS "-Wall -pedantic -std=c17")
 
+if (CMAKE_BUILD_TYPE STREQUAL "ASAN")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+endif ()
+
 include_directories("include")
 
 add_subdirectory(task4)
