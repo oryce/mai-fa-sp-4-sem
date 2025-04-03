@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include <arpa/inet.h>
+#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
