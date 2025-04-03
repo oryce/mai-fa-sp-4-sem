@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdbool.h>
-#include <asm-generic/errno.h>
 #include <errno.h>
 
 #define ll long long int
