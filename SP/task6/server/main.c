@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +53,7 @@ static char* list_files(const char* const root_path) {
 
 	struct dirent* ent;
 	while ((ent = readdir(dir))) {
-		char abs_ent_path[PATH_MAX] = {'\0'};
+		char abs_ent_path[MAX_PATH] = {'\0'};
 
 		if (*root_path == '/' && *(root_path + 1) == '\0') {
 			// Appending "root_path" adds another "/" here, which is unwanted.

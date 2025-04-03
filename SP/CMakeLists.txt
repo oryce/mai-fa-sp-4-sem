@@ -4,5 +4,7 @@ project(sp_lab_1)
 
 set(CMAKE_C_FLAGS "-Wall -pedantic -std=c17")
 
+include_directories("include")
+
 add_subdirectory(task4)
 add_subdirectory(task6)
