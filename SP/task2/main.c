@@ -10,6 +10,8 @@
 #define ll long long int
 #define ull unsigned long long int
 #define INITIAL_ALLOC 128
+#define COPY_EXECUTABLE "./sp_task2_copy"
+#define FIND_EXECUTABLE "./sp_task2_find"
 
 void close_files(FILE** files, size_t count) {
 	for (int i = 0; i != count; ++i) {
@@ -95,7 +97,7 @@ bool copy_file(const size_t count, const char* name_src) {
 		}
 
 		if (pid == 0) {
-			char* args[] = {"../bin/./copy", (char*)name_src, new_filename, NULL};
+			char* args[] = {COPY_EXECUTABLE, (char*)name_src, new_filename, NULL};
 			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
@@ -137,7 +139,7 @@ bool find_string(char** names, FILE** files, const char* str, const int count) {
 		}
 
 		if (pid == 0) {
-			char* args[] = {"../bin/./find", (char*)names[i + 1], (char*)str, NULL};
+			char* args[] = {FIND_EXECUTABLE, (char*)names[i + 1], (char*)str, NULL};
 			execvp(args[0], args);
 		} else {
 			pids[i] = pid;
