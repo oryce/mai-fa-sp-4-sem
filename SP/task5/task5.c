@@ -16,13 +16,7 @@
 #include <unistd.h>
 
 #define ll long long
-#define FILENAMESEM "tempsem"
-#define check(x)                     \
-    if (x != 0)                      \
-    {                                \
-        semctl(sem_id, 0, IPC_RMID); \
-        return x;                    \
-    }
+
 
 #define EMPTY 0
 #define MAN_ONLY 1
@@ -111,7 +105,7 @@ int StringToInt(char *str, int *res)
     return 0;
 }
 
-int woman_wants_to_enter(atomic_int *cur_state, int sem_id)
+int woman_wants_to_enter(atomic_int *cur_state)
 {
     while (true)
     {
@@ -131,7 +125,7 @@ int woman_wants_to_enter(atomic_int *cur_state, int sem_id)
     }
 }
 
-int woman_leave(atomic_int *cur_state, int sem_id, int n)
+int woman_leave(atomic_int *cur_state, int n)
 {
     pthread_mutex_lock(&mutex);
     current_number--;
@@ -143,7 +137,7 @@ int woman_leave(atomic_int *cur_state, int sem_id, int n)
     pthread_mutex_unlock(&mutex);
 }
 
-int man_wants_to_enter(atomic_int *cur_state, int sem_id)
+int man_wants_to_enter(atomic_int *cur_state)
 {
     while (true)
     {
@@ -165,7 +159,7 @@ int man_wants_to_enter(atomic_int *cur_state, int sem_id)
     }
 }
 
-int man_leave(atomic_int *cur_state, int sem_id, int n)
+int man_leave(atomic_int *cur_state, int n)
 {
     pthread_mutex_lock(&mutex);
     current_number--;
@@ -183,9 +177,9 @@ void *manage_gender(void *gender)
 {
     char* g = (char*)gender;
     if (g =="m"){
-        woman_wants_to_enter(&cur_state, sem_id);
+        woman_wants_to_enter(&cur_state);
     } else {
-        man_wants_to_enter(&cur_state, sem_id);
+        man_wants_to_enter(&cur_state);
     }
     long a;    
     lrand48_r(&buf, &a);
@@ -193,16 +187,15 @@ void *manage_gender(void *gender)
     // printf("%ld\n", a);
     sleep(a);
     if (g == "m"){
-        woman_leave(&cur_state, sem_id, max_in_room);
+        woman_leave(&cur_state, max_in_room);
     } else {
-        man_leave(&cur_state, sem_id, max_in_room);
+        man_leave(&cur_state, max_in_room);
     }
 }
 
 int main(int argsc, char **args)
 {
     const int TEST_NUMBER = 10;
-    key_t key_sem;
 
     if (argsc != 2)
     {
@@ -217,7 +210,6 @@ int main(int argsc, char **args)
         return 1;
     }
     
-    key_sem = ftok(FILENAMESEM, 'K');
     pthread_t *t = (pthread_t *)malloc((TEST_NUMBER * 2) * sizeof(pthread_t));
 
     if (t == NULL)
@@ -225,14 +217,6 @@ int main(int argsc, char **args)
         return 1;
     }
 
-    sem_id = semget(key_sem, 1, IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-    if (sem_id == -1)
-    {
-        free(t);
-        return 1;
-    }
-
-    semctl(sem_id, 0, SETVAL, max_in_room);
     pthread_mutex_init(&mutex, NULL);
     srand48_r(time(NULL), &buf);
 
@@ -263,7 +247,6 @@ int main(int argsc, char **args)
     }
 
     pthread_mutex_destroy(&mutex);
-    semctl(sem_id, 0, IPC_RMID);
     free(t);
     return 0;
 }
