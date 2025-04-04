@@ -1,14 +1,12 @@
-#define _GNU_SOURCE
-
 #include <arpa/inet.h>
 #include <dirent.h>
-#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <endian.h>
 
 #define CONNECTIONS_BACKLOG 5
 #define MAX_PATH 16384  // see client/main.c on path limits
@@ -79,7 +77,7 @@ static char* list_files(const char* const root_path) {
 		res_size += abs_ent_size + 1;
 
 		strncat(res_buf, abs_ent_path, abs_ent_size - 1);
-		strncat(res_buf, "\n", 1);
+		strcat(res_buf, "\n");
 	}
 
 	closedir(dir);

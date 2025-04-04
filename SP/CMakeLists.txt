@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
-project(sp_lab_1)
+project(sp_lab_1 LANGUAGES C)
 
 set(CMAKE_C_FLAGS "-Wall -pedantic -std=c17")
 
@@ -8,7 +8,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "ASAN")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
 endif ()
 
-include_directories("include")
+# Enable POSIX features
+add_compile_definitions(
+    _DEFAULT_SOURCE
+)
 
 add_subdirectory(task2)
 add_subdirectory(task4)
