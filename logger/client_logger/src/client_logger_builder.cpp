@@ -48,25 +48,7 @@ logger_builder& client_logger_builder::transform_with_configuration(
         if (key == "format") {
             continue;
         }
-
-        logger::severity severity;
-
-        if (key == "trace") {
-            severity = logger::severity::trace;
-        } else if (key == "debug") {
-            severity = logger::severity::debug;
-        } else if (key == "information") {
-            severity = logger::severity::information;
-        } else if (key == "warning") {
-            severity = logger::severity::warning;
-        } else if (key == "error") {
-            severity = logger::severity::error;
-        } else if (key == "critical") {
-            severity = logger::severity::critical;
-        } else {
-            throw std::out_of_range("Invalid severity value");
-        }
-
+        logger::severity severity = logger_builder::string_to_severity(key);
         parse_severity(severity, value);
     }
 
