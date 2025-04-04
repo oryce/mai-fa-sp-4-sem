@@ -1,19 +1,21 @@
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <endian.h>
 
 #define CONNECTIONS_BACKLOG 5
 #define MAX_PATH 16384  // see client/main.c on path limits
 
-#define LOG(client_fd, message, ...)                                   \
-	do {                                                               \
-		printf("[client %d] " message "\n", client_fd, ##__VA_ARGS__); \
+#define LOG(client_fd, ...)                \
+	do {                                   \
+		printf("[client %d] ", client_fd); \
+		printf(__VA_ARGS__);               \
+		printf("\n");                      \
 	} while (0);
 
 static int cleanup(const int exit_code, const int server_fd) {
