@@ -1,15 +1,15 @@
 #include <ctype.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "vector.h"
-#include <time.h>
-#include <string.h>
 #include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "vector.h"
+
 #define ll long long int
-
 #define USERS_FILE "password/passwords.txt"
-
 
 typedef enum en {
 	OK,
@@ -87,10 +87,7 @@ kErrors Registrate(vector* user_vector) {
 	if (check != '\n') {
 		return INC_INPUT;
 	}
-	user new_user = {
-		.pincode = pincode,
-		.sanctions = -1
-	};
+	user new_user = {.pincode = pincode, .sanctions = -1};
 	strcpy(new_user.login, name);
 	if (!vector_push(user_vector, new_user)) {
 		return MEM_ALLOC_ERR;
@@ -191,15 +188,13 @@ kErrors Login(const vector* user_vector, user** out_user) {
 struct tm ConvertToTm(const char* time) {
 	int d, M, y, h, m, s;
 	sscanf(time, "%d:%d:%d %d:%d:%d", &d, &M, &y, &h, &m, &s);
-	const struct tm out = {
-		.tm_mday = d,
-		.tm_mon = M - 1,
-		.tm_year = y - 1900,
-		.tm_hour = h,
-		.tm_min = m,
-		.tm_sec = s,
-		.tm_isdst = -1
-	};
+	const struct tm out = {.tm_mday = d,
+	                       .tm_mon = M - 1,
+	                       .tm_year = y - 1900,
+	                       .tm_hour = h,
+	                       .tm_min = m,
+	                       .tm_sec = s,
+	                       .tm_isdst = -1};
 	return out;
 }
 
@@ -391,7 +386,7 @@ void interaction(user* current_user, vector* user_vector) {
 	}
 }
 
-kErrors GoToLogPage(vector* user_vector){
+kErrors GoToLogPage(vector* user_vector) {
 	int c = 0;
 	char op;
 	char check;
@@ -434,7 +429,7 @@ kErrors GoToLogPage(vector* user_vector){
 }
 
 int load_users(vector* user_vector) {
-	FILE *file = fopen(USERS_FILE, "r");
+	FILE* file = fopen(USERS_FILE, "r");
 	if (!file) {
 		fclose(file);
 		return 1;
@@ -444,10 +439,7 @@ int load_users(vector* user_vector) {
 	int password;
 	while (fscanf(file, "%s %d", &login, &password) == 2) {
 		user_count++;
-		user new_user = {
-			.pincode = password,
-			.sanctions = -1
-		};
+		user new_user = {.pincode = password, .sanctions = -1};
 		strcpy(new_user.login, login);
 		if (!vector_push(user_vector, new_user)) {
 			return 1;
@@ -458,7 +450,7 @@ int load_users(vector* user_vector) {
 }
 
 int save_users(const vector* user_vector) {
-	FILE *file = fopen(USERS_FILE, "w");
+	FILE* file = fopen(USERS_FILE, "w");
 	if (!file) {
 		return 1;
 	}

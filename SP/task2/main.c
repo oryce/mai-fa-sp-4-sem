@@ -1,11 +1,11 @@
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <stdbool.h>
-#include <errno.h>
+#include <unistd.h>
 
 #define ll long long int
 #define ull unsigned long long int
@@ -157,11 +157,9 @@ bool find_string(char** names, FILE** files, const char* str, const int count) {
 			} else if (exit_code == 1) {
 				printf("Not found in %s\n", names[i + 1]);
 			} else {
-				const char* msg = (exit_code == 2)
-					                  ? "Invalid arguments"
-					                  : (exit_code == 3)
-					                  ? "File open error"
-					                  : "Unknown error";
+				const char* msg = (exit_code == 2)   ? "Invalid arguments"
+				                  : (exit_code == 3) ? "File open error"
+				                                     : "Unknown error";
 				fprintf(stderr, "Error searching %s: %s\n", names[i + 1], msg);
 				success = false;
 			}
@@ -173,7 +171,6 @@ bool find_string(char** names, FILE** files, const char* str, const int count) {
 	free(pids);
 	return success;
 }
-
 
 int main(const int argc, char** argv) {
 	if (argc < 3) {

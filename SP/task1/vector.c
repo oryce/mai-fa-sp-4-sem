@@ -1,7 +1,9 @@
 #pragma once
-#include <stdlib.h>
-#include <stdbool.h>
+
 #include "vector.h"
+
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 bool vector_create(vector* v, const int init_buff_size) {
@@ -14,9 +16,7 @@ bool vector_create(vector* v, const int init_buff_size) {
 	return true;
 }
 
-bool vector_is_empty(const vector* v) {
-	return v->size == 0;
-}
+bool vector_is_empty(const vector* v) { return v->size == 0; }
 
 user* vector_search(const vector* v, const char* element) {
 	for (int i = 0; i < v->size; ++i) {
@@ -37,13 +37,9 @@ bool vector_push(vector* v, const TYPE d) {
 	return true;
 }
 
-void v_set(const vector* v, const int pos, const TYPE val) {
-	v->buffer[pos] = val;
-}
+void v_set(const vector* v, const int pos, const TYPE val) { v->buffer[pos] = val; }
 
-TYPE v_get(const vector* v, const int pos) {
-	return v->buffer[pos];
-}
+TYPE v_get(const vector* v, const int pos) { return v->buffer[pos]; }
 
 bool vector_grow(vector* v) {
 	TYPE* new_buf = realloc(v->buffer, v->buffer_size * 2 * sizeof(TYPE));
@@ -61,6 +57,4 @@ void vector_free(vector* v) {
 	v->size = 0;
 }
 
-void vector_destroy(const vector* v) {
-	free(v->buffer);
-}
+void vector_destroy(const vector* v) { free(v->buffer); }
