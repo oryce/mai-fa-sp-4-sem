@@ -171,8 +171,6 @@ int man_leave(_Atomic(int) *cur_state, int n)
     pthread_mutex_unlock(&mutex);
 }
 
-struct drand48_data buf;
-
 void *manage_gender(void *gender)
 {
     char* g = (char*)gender;
@@ -181,8 +179,7 @@ void *manage_gender(void *gender)
     } else {
         man_wants_to_enter(&cur_state);
     }
-    long a;    
-    lrand48_r(&buf, &a);
+    long a = lrand48();
     a = a % 5;
     // printf("%ld\n", a);
     sleep(a);
@@ -218,7 +215,7 @@ int main(int argsc, char **args)
     }
 
     pthread_mutex_init(&mutex, NULL);
-    srand48_r(time(NULL), &buf);
+    srand48(time(NULL));
 
     for (int i = 0; i < TEST_NUMBER; i++)
     {
