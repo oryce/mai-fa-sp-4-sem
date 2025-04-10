@@ -3,8 +3,6 @@
 
 int main()
 {
-
-
     server_logger_builder builder;
 
     builder.add_file_stream("a.txt", logger::severity::trace).add_file_stream("b.txt", logger::severity::debug).

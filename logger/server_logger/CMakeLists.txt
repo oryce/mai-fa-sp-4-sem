@@ -4,9 +4,6 @@ add_library(
         src/server_logger_builder.cpp)
 
 add_subdirectory(tests)
-find_package(Crow CONFIG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system)
-find_package(httplib REQUIRED)
 
 target_include_directories(
         mp_os_lggr_srvr_lggr
@@ -15,23 +12,24 @@ target_include_directories(
 target_link_libraries(
         mp_os_lggr_srvr_lggr
         PUBLIC
-        mp_os_cmmn
-        Crow::Crow asio::asio)
+        mp_os_cmmn)
 target_link_libraries(
         mp_os_lggr_srvr_lggr
         PUBLIC
-        mp_os_lggr_lggr
-        Crow::Crow asio::asio)
+        mp_os_lggr_lggr)
 target_link_libraries(
         mp_os_lggr_srvr_lggr
         PUBLIC
-        nlohmann_json::nlohmann_json
-        Crow::Crow asio::asio)
+        nlohmann_json::nlohmann_json)
 target_link_libraries(
         mp_os_lggr_srvr_lggr
-        PRIVATE
-        httplib::httplib
-        Crow::Crow asio::asio
-)
-
-
+        PUBLIC
+        asio::asio)
+target_link_libraries(
+        mp_os_lggr_srvr_lggr
+        PUBLIC
+        Crow::Crow)
+target_link_libraries(
+        mp_os_lggr_srvr_lggr
+        PUBLIC
+        httplib::httplib)
