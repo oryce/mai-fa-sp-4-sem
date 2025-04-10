@@ -138,6 +138,22 @@ private:
 
     sorted_iterator begin() const noexcept;
     sorted_iterator end() const noexcept;
+
+    static std::pair<void *, size_t> get_block_info(void *block_start);
+
+    fit_mode get_fit_mode() const;
+
+    std::mutex &get_mutex();
+
+    size_t get_block_size(void *block) const;
+
+    void *get_next_free_block(void *block) const;
+
+    void *split_block_if_needed(void *block, void *prev_block, size_t requested_size);
+
+    void set_first_free_block(void *new_first);
+
+    void *get_first_free_block() const;
 };
 
 #endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_SORTED_LIST_H
