@@ -14,7 +14,7 @@ static void check(httplib::Result&& res)
 {
     if (!res || res->status != httplib::NoContent_204)
     {
-        throw std::runtime_error("cannot destroy logger");
+        throw std::runtime_error("request to server failed");
     }
 }
 
