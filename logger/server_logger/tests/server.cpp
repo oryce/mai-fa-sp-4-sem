@@ -3,17 +3,24 @@
 #include <fstream>
 #include <iostream>
 
-
 server::server(uint16_t port)
 {
-    CROW_ROUTE(app, "/init")([&](const crow::request &req){
+    CROW_ROUTE(app, "/init")([&](const crow::request& req)
+    {
+        if (req.method != crow::HTTPMethod::GET)
+        {
+            return crow::response(crow::status::METHOD_NOT_ALLOWED);
+        }
+
         std::string pid_str = req.url_params.get("pid");
         std::string sev_str = req.url_params.get("sev");
         std::string path_str = req.url_params.get("path");
         std::string console_str = req.url_params.get("console");
 
-        std::cout << "INIT PID: " << pid_str << " SEVERITY: " << sev_str << " PATH: " << path_str << " CONSOLE: "
-                  << console_str << std::endl;
+        std::cout << "INIT PID: " << pid_str
+            << " SEVERITY: " << sev_str
+            << " PATH: " << path_str
+            << " CONSOLE: " << console_str << std::endl;
 
         int pid = std::stoi(pid_str);
         logger::severity sev = logger_builder::string_to_severity(sev_str);
@@ -39,10 +46,16 @@ server::server(uint16_t port)
             std::ofstream tmp(inner_it->second.first);
         inner_it->second.second = console;
 
-        return 0;
+        return crow::response(crow::status::NO_CONTENT);
     });
 
-    CROW_ROUTE(app, "/destroy")([&](const crow::request &req){
+    CROW_ROUTE(app, "/destroy")([&](const crow::request& req)
+    {
+        if (req.method != crow::HTTPMethod::GET)
+        {
+            return crow::response(crow::status::METHOD_NOT_ALLOWED);
+        }
+
         std::string pid_str = req.url_params.get("pid");
 
         std::cout << "DESTROY PID: " << pid_str << std::endl;
@@ -52,15 +65,23 @@ server::server(uint16_t port)
         std::lock_guard lock(_mut);
         _streams.erase(pid);
 
-        return 0;
+        return crow::response(crow::status::NO_CONTENT);
     });
 
-    CROW_ROUTE(app, "/log")([&](const crow::request &req){
+    CROW_ROUTE(app, "/log")([&](const crow::request& req)
+    {
+        if (req.method != crow::HTTPMethod::GET)
+        {
+            return crow::response(crow::status::METHOD_NOT_ALLOWED);
+        }
+
         std::string pid_str = req.url_params.get("pid");
         std::string sev_str = req.url_params.get("sev");
         std::string message = req.url_params.get("message");
 
-        std::cout << "LOG PID: " << pid_str << " SEVERITY: " << sev_str << " MESSAGE: " << message << std::endl;
+        std::cout << "LOG PID: " << pid_str
+            << " SEVERITY: " << sev_str
+            << " MESSAGE: " << message << std::endl;
 
         int pid = std::stoi(pid_str);
         logger::severity sev = logger_builder::string_to_severity(sev_str);
@@ -74,21 +95,24 @@ server::server(uint16_t port)
 
             if (inner_it != it->second.end())
             {
-                const std::string &path = inner_it->second.first;
+                const std::string& path = inner_it->second.first;
                 if (!path.empty())
                 {
                     std::ofstream stream(path, std::ios_base::app);
                     if (stream.is_open())
                         stream << message << std::endl;
+                    else
+                        return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
                 if (inner_it->second.second)
                     std::cout << message << std::endl;
             }
         }
-        return 0;
+
+        return crow::response(crow::status::NO_CONTENT);
     });
 
 
     app.port(port).loglevel(crow::LogLevel::Warning).multithreaded();
-	app.run();
+    app.run();
 }
