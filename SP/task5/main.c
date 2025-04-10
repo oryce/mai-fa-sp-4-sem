@@ -174,7 +174,7 @@ int man_leave(_Atomic(int) *cur_state, int n)
 void *manage_gender(void *gender)
 {
     char* g = (char*)gender;
-    if (g =="m"){
+    if (strcmp(g, "m") == 0) {
         woman_wants_to_enter(&cur_state);
     } else {
         man_wants_to_enter(&cur_state);
@@ -183,7 +183,7 @@ void *manage_gender(void *gender)
     a = a % 5;
     // printf("%ld\n", a);
     sleep(a);
-    if (g == "m"){
+    if (strcmp(g, "m") == 0) {
         woman_leave(&cur_state, max_in_room);
     } else {
         man_leave(&cur_state, max_in_room);
