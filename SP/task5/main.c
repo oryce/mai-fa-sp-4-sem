@@ -28,8 +28,8 @@ pthread_mutex_t mutex;
 
 int sem_id;
 int max_in_room;
-atomic_int cur_state = EMPTY;
-atomic_int current_number;
+_Atomic(int) cur_state = EMPTY;
+_Atomic(int) current_number;
 
 bool CheckNumber(char *number, int osn)
 {
@@ -105,7 +105,7 @@ int StringToInt(char *str, int *res)
     return 0;
 }
 
-int woman_wants_to_enter(atomic_int *cur_state)
+int woman_wants_to_enter(_Atomic(int) *cur_state)
 {
     while (true)
     {
@@ -125,7 +125,7 @@ int woman_wants_to_enter(atomic_int *cur_state)
     }
 }
 
-int woman_leave(atomic_int *cur_state, int n)
+int woman_leave(_Atomic(int) *cur_state, int n)
 {
     pthread_mutex_lock(&mutex);
     current_number--;
@@ -137,7 +137,7 @@ int woman_leave(atomic_int *cur_state, int n)
     pthread_mutex_unlock(&mutex);
 }
 
-int man_wants_to_enter(atomic_int *cur_state)
+int man_wants_to_enter(_Atomic(int) *cur_state)
 {
     while (true)
     {
@@ -159,7 +159,7 @@ int man_wants_to_enter(atomic_int *cur_state)
     }
 }
 
-int man_leave(atomic_int *cur_state, int n)
+int man_leave(_Atomic(int) *cur_state, int n)
 {
     pthread_mutex_lock(&mutex);
     current_number--;
