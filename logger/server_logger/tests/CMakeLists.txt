@@ -1,3 +1,5 @@
+find_package(Crow REQUIRED)
+
 add_executable(
         mp_os_lggr_srvr_lggr_tests
         server_logger_tests.cpp)
@@ -5,8 +7,7 @@ add_executable(
 target_link_libraries(
         mp_os_lggr_srvr_lggr_tests
         PRIVATE
-        gtest_main
-)
+        gtest_main)
 target_link_libraries(
         mp_os_lggr_srvr_lggr_tests
         PRIVATE
@@ -21,9 +22,12 @@ add_executable(
 target_link_libraries(
         serv_test
         PRIVATE
-        gtest_main
-)
+        gtest_main)
 target_link_libraries(
         serv_test
         PRIVATE
         mp_os_lggr_srvr_lggr)
+target_link_libraries(
+        serv_test
+        PRIVATE
+        Crow::Crow)

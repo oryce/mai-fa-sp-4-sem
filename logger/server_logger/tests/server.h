@@ -5,6 +5,7 @@
 #ifndef MP_OS_SERVER_H
 #define MP_OS_SERVER_H
 
+#include <thread> // Do not remove, Crow fails to build without it
 #include <crow.h>
 #include <unordered_map>
 #include <logger.h>
