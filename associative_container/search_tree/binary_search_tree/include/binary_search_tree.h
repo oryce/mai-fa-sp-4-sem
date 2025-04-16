@@ -2306,10 +2306,11 @@ binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_iterator pos) {
     if (node_to_delete->parent == nullptr) {
         _root = new_node;
     }
-
-    __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(*this, node_to_delete);
     _size--;
     __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &node_to_delete);
+    __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(*this, node_to_delete);
+
+
     if (next_node.get_node() != nullptr) {
         if (std::prev(next_node).get_node() != nullptr) {
             next_node--;
@@ -3279,7 +3280,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::get_prev_postfix(node *n) {
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 std::pair<typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator, bool>
 binary_search_tree<tkey, tvalue, compare, tag>::insert(const value_type &value) {
-    node *prev = NULL;
+    node *prev = nullptr;
     node *current = _root;
     while (current != nullptr) {
         if (compare_keys(value.first, current->data.first)) {
@@ -3308,8 +3309,8 @@ binary_search_tree<tkey, tvalue, compare, tag>::insert(const value_type &value) 
     } else {
         prev->right_subtree = new_node;
     }
-    __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
     _size++;
+    __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
     return std::pair<infix_iterator, bool>(it, true);
 }
 
