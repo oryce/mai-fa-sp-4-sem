@@ -149,16 +149,13 @@ TEST(AVLTreePositiveTests, test1)
     logger->trace("AVLTreePositiveTests.test1 started");
     
     auto avl = std::make_unique<AVL_tree<int, std::string>>(std::less<int>(), nullptr, logger.get());
-
-    avl->emplace(1, "l");
-    avl->emplace(2, "b");
-    avl->emplace(3, "d");
+    
     avl->emplace(5, "a");
-    avl->emplace(14, "e");
+    avl->emplace(2, "b");
     avl->emplace(15, "c");
-
-
-
+    avl->emplace(3, "d");
+    avl->emplace(14, "e");
+    avl->emplace(1, "l");
     
     std::vector<test_data<int, std::string>> expected_result =
         {
