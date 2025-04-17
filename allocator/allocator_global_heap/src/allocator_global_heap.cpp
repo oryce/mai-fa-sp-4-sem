@@ -62,11 +62,16 @@ allocator_global_heap::allocator_global_heap(const allocator_global_heap &other)
 
 allocator_global_heap &allocator_global_heap::operator=(const allocator_global_heap &other)
 {
+    if (this == &other)
+    {
+        return *this;
+    }
     trace_with_guard(
         "[>] allocator_global_heap &allocator_global_heap::operator=(const allocator_global_heap &other)");
     _logger = other._logger;
     trace_with_guard(
         "[<] allocator_global_heap &allocator_global_heap::operator=(const allocator_global_heap &other)");
+    return *this;
 }
 
 bool allocator_global_heap::do_is_equal(const std::pmr::memory_resource &other) const noexcept
@@ -96,4 +101,5 @@ allocator_global_heap &allocator_global_heap::operator=(allocator_global_heap &&
     }
     trace_with_guard(
         "[<] allocator_global_heap &allocator_global_heap::operator=(allocator_global_heap &&other) noexcept");
+    return *this;
 }
