@@ -2285,8 +2285,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_iterator pos) {
             }
         }
 
-        ////Обработка случая, когда новый узел является ребенком удаляемого.
-        ////В силу алгоритма в таком случае новый узел будет левым поддеревом удаляемого и не будет иметь правого поддерева.
+        //Managing case when new_node is child f node_to_delete
         if (new_node->parent == node_to_delete) {
             new_node->right_subtree = node_to_delete->right_subtree;
         } else {
