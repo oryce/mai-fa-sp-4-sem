@@ -297,6 +297,8 @@ public:
         using pointer = value_type*;
         using iterator_category = std::bidirectional_iterator_tag;
 
+        node* get_data() const { return _data; }
+
         explicit infix_iterator(node* data = nullptr);
 
         virtual ~infix_iterator() =default;
@@ -2825,6 +2827,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_left_rotation(node *&
 
 
     c->left_subtree = a;
+    c->parent = a->parent;
     if (a != nullptr) {
         a->parent = c;
     }
@@ -2868,6 +2871,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_right_rotation(node *
     subtree_root = subtree_root->left_subtree;
 
     b->left_subtree = d;
+    b->parent = a->parent;
     if (d != nullptr) {
         d->parent = b;
     }
@@ -3300,6 +3304,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::insert(const value_type &value) 
     }
     if (prev == nullptr){
         _root = new_node;
+        __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
         return std::pair<infix_iterator, bool>(itt, true);
     }
 
@@ -3338,6 +3343,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::insert(value_type &&value) {
     }
     if (prev == nullptr){
         _root = new_node;
+        __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
         return std::pair<infix_iterator, bool>(itt, true);
     }
 

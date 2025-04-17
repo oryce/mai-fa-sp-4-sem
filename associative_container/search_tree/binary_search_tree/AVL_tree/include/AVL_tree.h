@@ -567,7 +567,7 @@ public:
     std::pair<infix_iterator, bool> insert(value_type &&);
 
     template<class ...Args>
-    std::pair<infix_iterator, bool> emplace(Args&&...args);
+    std::pair<infix_iterator, bool> emplace(Args &&...args);
 
     infix_iterator insert_or_assign(const value_type &);
 
@@ -599,6 +599,8 @@ public:
     using parent::erase;
     using parent::insert;
     using parent::insert_or_assign;
+
+    static void rebalance(parent::node *&to_balance);
 };
 
 template<typename compare, typename U, typename iterator>
@@ -621,11 +623,11 @@ namespace __detail {
     template<class ...Args>
     binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *bst_impl<tkey, tvalue, compare, AVL_TAG>::create_node(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont, Args &&...args) {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare>\n"
-                              "template<class ...Args>\n"
-                              "binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *bst_impl<tkey, tvalue, compare, AVL_TAG>::create_node(\n"
-                              "binary_search_tree <tkey, tvalue, compare, AVL_TAG> &, Args &&...)",
-                              "your code should be here...");
+        typename AVL_tree<tkey, tvalue, compare>::node *n = cont._allocator.new_object<typename AVL_tree<tkey, tvalue, compare>::node>(
+                args ...);
+        n->left_subtree = nullptr;
+        n->right_subtree = nullptr;
+        return dynamic_cast<binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *>(n);
     }
 
     template<typename tkey, typename tvalue, typename compare>
@@ -640,18 +642,19 @@ namespace __detail {
     template<typename tkey, typename tvalue, typename compare>
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::post_insert(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
-            typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node **node)
-    {
-        // 1. ???????? node ? AVL-???? (???? ??? ????????)
-        auto *n = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node*>(*node);
-        if (n == nullptr) {
-            // ?????? ?????????? (???? ?? AVL-????)
-            return;
-        }
+            typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node **node) {
 
-        // 2. ????????? ??????
-        if (n->get_balance() == 2 || n->get_balance() == -2) {
-            // ????????????...
+        typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *&cur = *node;
+        while (cur != nullptr) {
+            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
+            // we pass cur to rebalance by reference.
+            // If rotation is applied inside rebalance, cur will point to the new node, which has replaced the old node after rotation
+            // We will use it to update _root if necessary
+            AVL_tree<tkey, tvalue, compare>::rebalance(cur);
+            if (cur->parent == nullptr){
+                cont._root = cur;
+            }
+            cur = cur->parent;
         }
     }
 
@@ -681,22 +684,27 @@ void __detail::bst_impl<tkey, tvalue, compare, __detail::AVL_TAG>::swap(
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 void AVL_tree<tkey, tvalue, compare>::node::recalculate_height() noexcept {
-    int left_height = (this->left_subtree ? this->left_subtree->height : -1);
-    int right_height = (this->right_subtree ? this->right_subtree->height : -1);
-    height = 1 + std::max(left_height, right_height);
+    auto *left = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
+    auto *right = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
+    int left_height = (left ? left->height : 0);
+    int right_height = (right ? right->height : 0);
+    this->height = 1 + std::max(left_height, right_height);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 short AVL_tree<tkey, tvalue, compare>::node::get_balance() const noexcept {
-    short left_height = (this->left_subtree ? this->left_subtree->height : -1);
-    short right_height = (this->right_subtree ? this->right_subtree->height : -1);
+    auto left = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
+    auto right = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
+    short left_height = (left ? left->height : 0);
+    short right_height = (right ? right->height : 0);
     return right_height - left_height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 template<class ...Args>
-AVL_tree<tkey, tvalue, compare>::node::node(parent::node *par, Args &&... args) : binary_search_tree::node(par,
-                                                                                                           args ...) {
+AVL_tree<tkey, tvalue, compare>::node::node(parent::node *par, Args &&... args)
+        : binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::node(par,
+                                                                             args ...) {
     height = 0;
 }
 
@@ -896,9 +904,7 @@ AVL_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::node *n)
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 AVL_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::infix_iterator it) noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> AVL_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::infix_iterator) noexcept",
-            "your code should be here...");
+    this->_data = it.get_data();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1697,6 +1703,43 @@ void AVL_tree<tkey, tvalue, compare>::swap(parent &other) noexcept {
 // endregion AVL_tree constructors
 
 // region AVL_tree methods
+
+template<typename tkey, typename tvalue, compator<tkey> compare>
+void AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *&to_balance) {
+    auto *n = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(to_balance);
+    auto *left = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->left_subtree);
+    auto *right = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->right_subtree);
+    if (n->get_balance() == 2) {
+        auto hl = right->left_subtree
+                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->left_subtree)->height : 0;
+        auto hr = right->right_subtree
+                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->right_subtree)->height : 0;
+        if (hl <= hr) {
+            binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::small_left_rotation(to_balance);
+        } else {
+            binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::big_left_rotation(to_balance);
+        }
+    } else if (n->get_balance() == -2) {
+        auto hl = left->left_subtree
+                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->left_subtree)->height : 0;
+        auto hr = left->right_subtree
+                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->right_subtree)->height : 0;
+        if (hl <= hr) {
+            binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::small_right_rotation(to_balance);
+        } else {
+            binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::big_right_rotation(to_balance);
+        }
+    }
+    n->recalculate_height();
+    if (n->parent) {
+        if (n->parent->left_subtree) {
+            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->left_subtree)->recalculate_height();
+        }
+        if (n->parent->right_subtree) {
+            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->right_subtree)->recalculate_height();
+        }
+    }
+}
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 std::pair<typename AVL_tree<tkey, tvalue, compare>::infix_iterator, bool>
