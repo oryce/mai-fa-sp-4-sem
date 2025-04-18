@@ -2285,8 +2285,6 @@ binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_iterator pos) {
             }
         }
 
-        ////ќбработка случа€, когда новый узел €вл€етс€ ребенком удал€емого.
-        ////¬ силу алгоритма в таком случае новый узел будет левым поддеревом удал€емого и не будет иметь правого поддерева.
         if (new_node->parent == node_to_delete) {
             new_node->right_subtree = node_to_delete->right_subtree;
         } else {
@@ -2813,7 +2811,6 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_left_rotation(node *&
 
     if (subtree_root->right_subtree == nullptr) {
         return;
-        //если правого поддерева нет, поворот выполнить невозможно
     }
 
 
@@ -2857,7 +2854,6 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_right_rotation(node *
     }
 
     if (subtree_root->left_subtree == nullptr) {
-        //если левого поддерева нет, поворот выполнить невозможно
         return;
     }
 
