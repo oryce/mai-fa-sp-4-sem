@@ -2224,102 +2224,10 @@ binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) con
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_iterator pos) {
-    node *node_to_delete = pos.get_node();
-    if (node_to_delete == nullptr) {
-        throw std::out_of_range("Incorrect iterator for erase\n");
-    }
-
-    infix_iterator next_node = std::next(pos);
-    //node* prev = (std::prev(pos)).get_node();
-    node *parent = node_to_delete->parent;
-    node *new_node = nullptr;
-    if ((node_to_delete->left_subtree == nullptr) && (node_to_delete->right_subtree == nullptr)) {
-        if (parent->left_subtree == node_to_delete) {
-            parent->left_subtree = nullptr;
-        } else {
-            parent->right_subtree = nullptr;
-        }
-    } else if (node_to_delete->left_subtree != nullptr && node_to_delete->right_subtree == nullptr) {
-        new_node = node_to_delete->left_subtree;
-        if (parent->left_subtree == node_to_delete) {
-            parent->left_subtree = new_node;
-            new_node->parent = node_to_delete->parent;
-        } else {
-            parent->right_subtree = new_node;
-            new_node->parent = node_to_delete->parent;
-        }
-    } else if (node_to_delete->left_subtree == nullptr && node_to_delete->right_subtree != nullptr) {
-        new_node = node_to_delete->right_subtree;
-        if (parent != nullptr) {
-            if (parent->left_subtree == node_to_delete) {
-                parent->left_subtree = new_node;
-            } else {
-                parent->right_subtree = new_node;
-            }
-        } else {
-            _root = new_node;
-        }
-        new_node->parent = node_to_delete->parent;
-    } else {
-        node *successor;
-
-        successor = node_to_delete->left_subtree;
-        while (successor->right_subtree) {
-            successor = successor->right_subtree;
-        }
-
-        new_node = successor;
-        if (node_to_delete->parent != nullptr) {
-            if (node_to_delete->parent->right_subtree == node_to_delete) {
-                node_to_delete->parent->right_subtree = new_node;
-            } else {
-                node_to_delete->parent->left_subtree = new_node;
-            }
-        }
-
-        if (new_node->parent != nullptr) {
-            if (new_node->parent->right_subtree == new_node) {
-                new_node->parent->right_subtree = new_node->left_subtree;
-            } else {
-                node_to_delete->parent->left_subtree = new_node->left_subtree;
-            }
-        }
-
-        //Managing case when new_node is child f node_to_delete
-        if (new_node->parent == node_to_delete) {
-            new_node->right_subtree = node_to_delete->right_subtree;
-        } else {
-            new_node->left_subtree = node_to_delete->left_subtree;
-            new_node->right_subtree = node_to_delete->right_subtree;
-        }
-
-
-        new_node->parent = node_to_delete->parent;
-
-        if (new_node->left_subtree) {
-            new_node->left_subtree->parent = new_node;
-        }
-        if (new_node->right_subtree) {
-            new_node->right_subtree->parent = new_node;
-        }
-    }
-
-    if (node_to_delete->parent == nullptr) {
-        _root = new_node;
-    }
-    _size--;
-    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &node_to_delete);
-    __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(*this, node_to_delete);
-
-
-    if (next_node.get_node() != nullptr) {
-        if (std::prev(next_node).get_node() != nullptr) {
-            next_node--;
-        }
-    }
-
-    return next_node;
-
+    node *n = pos.get_node();
+    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &n);
+    infix_iterator it(n);
+    return it;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2350,8 +2258,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_const_iterator first
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 size_t binary_search_tree<tkey, tvalue, compare, tag>::erase(const tkey &key) {
     node *n = go_to_node_with_key(key);
-    infix_iterator it(n);
-    erase(it);
+    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this,&n);
     return size();
 }
 
@@ -2950,7 +2857,93 @@ namespace __detail {
     template<typename tkey, typename tvalue, typename compare, typename tag>
     void bst_impl<tkey, tvalue, compare, tag>::erase(binary_search_tree<tkey, tvalue, compare, tag> &cont,
                                                      typename binary_search_tree<tkey, tvalue, compare, tag>::node **node_ptr) {
+        auto* node_to_delete = *node_ptr;
+        if (node_to_delete == nullptr) {
+            throw std::out_of_range("Incorrect iterator for erase\n");
+        }
 
+        //node* prev = (std::prev(pos)).get_node();
+        auto *parent = node_to_delete->parent;
+        typename binary_search_tree<tkey, tvalue, compare, tag>::node *new_node = nullptr;
+        if ((node_to_delete->left_subtree == nullptr) && (node_to_delete->right_subtree == nullptr)) {
+            if (parent->left_subtree == node_to_delete) {
+                parent->left_subtree = nullptr;
+            } else {
+                parent->right_subtree = nullptr;
+            }
+        } else if (node_to_delete->left_subtree != nullptr && node_to_delete->right_subtree == nullptr) {
+            new_node = node_to_delete->left_subtree;
+            if (parent->left_subtree == node_to_delete) {
+                parent->left_subtree = new_node;
+                new_node->parent = node_to_delete->parent;
+            } else {
+                parent->right_subtree = new_node;
+                new_node->parent = node_to_delete->parent;
+            }
+        } else if (node_to_delete->left_subtree == nullptr && node_to_delete->right_subtree != nullptr) {
+            new_node = node_to_delete->right_subtree;
+            if (parent != nullptr) {
+                if (parent->left_subtree == node_to_delete) {
+                    parent->left_subtree = new_node;
+                } else {
+                    parent->right_subtree = new_node;
+                }
+            } else {
+                cont._root = new_node;
+            }
+            new_node->parent = node_to_delete->parent;
+        } else {
+            typename binary_search_tree<tkey, tvalue, compare, tag>::node *successor;
+
+            successor = node_to_delete->left_subtree;
+            while (successor->right_subtree) {
+                successor = successor->right_subtree;
+            }
+
+            new_node = successor;
+            if (node_to_delete->parent != nullptr) {
+                if (node_to_delete->parent->right_subtree == node_to_delete) {
+                    node_to_delete->parent->right_subtree = new_node;
+                } else {
+                    node_to_delete->parent->left_subtree = new_node;
+                }
+            }
+
+            if (new_node->parent != nullptr) {
+                if (new_node->parent->right_subtree == new_node) {
+                    new_node->parent->right_subtree = new_node->left_subtree;
+                } else {
+                    node_to_delete->parent->left_subtree = new_node->left_subtree;
+                }
+            }
+
+            //Managing case when new_node is child f node_to_delete
+            if (new_node->parent == node_to_delete) {
+                new_node->right_subtree = node_to_delete->right_subtree;
+            } else {
+                new_node->left_subtree = node_to_delete->left_subtree;
+                new_node->right_subtree = node_to_delete->right_subtree;
+            }
+
+
+            new_node->parent = node_to_delete->parent;
+
+            if (new_node->left_subtree) {
+                new_node->left_subtree->parent = new_node;
+            }
+            if (new_node->right_subtree) {
+                new_node->right_subtree->parent = new_node;
+            }
+        }
+
+        if (node_to_delete->parent == nullptr) {
+            cont._root = new_node;
+        }
+        cont._size--;
+        __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(cont, node_to_delete);
+
+
+        *node_ptr = new_node;
     }
 }
 
@@ -3380,7 +3373,7 @@ template<class ...Args>
 std::pair<typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator, bool>
 binary_search_tree<tkey, tvalue, compare, tag>::emplace(Args &&... args) {
     value_type n(args ...);
-    return insert(std::move(n));
+    return this->insert(std::move(n));
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>

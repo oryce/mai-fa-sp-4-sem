@@ -636,9 +636,8 @@ namespace __detail {
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::delete_node(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
             binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *n) {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare>\n"
-                              "void bst_impl<tkey, tvalue, compare, AVL_TAG>::delete_node(\n"
-                              "binary_search_tree <tkey, tvalue, compare, AVL_TAG> &)", "your code should be here...");
+        auto * avl_node = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node*>(n);
+        cont._allocator.delete_object(n);
     }
 
     template<typename tkey, typename tvalue, typename compare>
@@ -664,6 +663,71 @@ namespace __detail {
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::erase(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
             typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node **node) {
+        auto &avl_tree = dynamic_cast<AVL_tree<tkey, tvalue, compare>&>(cont);
+        auto *node_to_delete = *node;
+        if (node_to_delete == nullptr) {
+            throw std::out_of_range("Incorrect iterator for erase\n");
+        }
+
+        //node* prev = (std::prev(pos)).get_node();
+        auto *parent = node_to_delete->parent;
+        typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *new_node = nullptr;
+        if (node_to_delete->right_subtree == nullptr) {
+            if (parent->left_subtree == node_to_delete){
+                parent->left_subtree = node_to_delete->left_subtree;
+            } else {
+                parent->right_subtree = node_to_delete->left_subtree;
+            }
+            avl_tree .rebalance_to_node(node_to_delete, avl_tree._root);
+        } else {
+            typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *successor;
+
+            successor = node_to_delete->right_subtree;
+            while (successor->left_subtree) {
+                successor = successor->left_subtree;
+            }
+
+            new_node = successor;
+
+
+            if (new_node->parent != nullptr) {
+                if (new_node->parent->right_subtree == new_node) {
+                    new_node->parent->right_subtree = new_node->right_subtree;
+                } else {
+                    new_node->parent->left_subtree = new_node->right_subtree;
+                }
+            }
+            dynamic_cast<AVL_tree<tkey, tvalue, compare>::node*>(new_node)->recalculate_height();
+
+
+
+            if (node_to_delete->parent != nullptr) {
+                if (node_to_delete->parent->right_subtree == node_to_delete) {
+                    node_to_delete->parent->right_subtree = new_node;
+                } else {
+                    node_to_delete->parent->left_subtree = new_node;
+                }
+            }
+
+            new_node->parent = node_to_delete->parent;
+            new_node->left_subtree = node_to_delete->left_subtree;
+            new_node->right_subtree = node_to_delete->right_subtree;
+
+            if (new_node->left_subtree) {
+                new_node->left_subtree->parent = new_node;
+            }
+            if (new_node->right_subtree) {
+                new_node->right_subtree->parent = new_node;
+            }
+        }
+
+        if (node_to_delete->parent == nullptr) {
+            avl_tree ._root = new_node;
+        }
+        avl_tree.rebalance_to_node(new_node, avl_tree._root);
+        avl_tree._size--;
+        __detail::bst_impl<tkey, tvalue, compare, __detail::AVL_TAG>::delete_node(cont, node_to_delete);
+        *node = new_node;
     }
 
     template<typename tkey, typename tvalue, typename compare>
@@ -1717,7 +1781,7 @@ void AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *&to_balance) {
                   ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->left_subtree)->height : 0;
         auto hr = left->right_subtree
                   ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->right_subtree)->height : 0;
-        if (hl <= hr) {
+        if (hr <= hl) {
             binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::small_right_rotation(to_balance);
         } else {
             binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::big_right_rotation(to_balance);
@@ -1750,7 +1814,8 @@ template<typename tkey, typename tvalue, compator<tkey> compare>
 template<class ...Args>
 std::pair<typename AVL_tree<tkey, tvalue, compare>::infix_iterator, bool>
 AVL_tree<tkey, tvalue, compare>::emplace(Args &&... args) {
-    return parent::emplace(args ...);
+    auto *avl = dynamic_cast<binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>*>(this);
+    return avl->emplace(args ...);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1812,9 +1877,8 @@ AVL_tree<tkey, tvalue, compare>::upper_bound(const tkey &key) const {
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 void AVL_tree<tkey, tvalue, compare>::rebalance_to_node(parent::node *from, parent::node *to){
-    auto cur = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node>(from);
-    auto stop = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node>(to);
-    while (cur != stop->parent) {
+    auto cur = from;
+    while (cur != nullptr) {
         dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
         AVL_tree<tkey, tvalue, compare>::rebalance(cur);
         if (cur->parent == nullptr) {
@@ -1828,76 +1892,8 @@ template<typename tkey, typename tvalue, compator<tkey> compare>
 typename AVL_tree<tkey, tvalue, compare>::infix_iterator
 AVL_tree<tkey, tvalue, compare>::erase(infix_iterator pos) {
     node *node_to_delete = pos.get_node();
-    if (node_to_delete == nullptr) {
-        throw std::out_of_range("Incorrect iterator for erase\n");
-    }
-
-    infix_iterator next_node = std::next(pos);
-    //node* prev = (std::prev(pos)).get_node();
-    node *parent = node_to_delete->parent;
-    node *new_node = nullptr;
-    if (node_to_delete->right_subtree == nullptr) {
-        if (parent->left_subtree == node_to_delete){
-            parent->left_subtree = node_to_delete->left_subtree;
-        } else {
-            parent->right_subtree = node_to_delete->left_subtree;
-        }
-    } else {
-        node *successor;
-
-        successor = node_to_delete->right_subtree;
-        while (successor->left_subtree) {
-            successor = successor->left_subtree;
-        }
-
-        new_node = successor;
-
-
-        if (new_node->parent != nullptr) {
-            if (new_node->parent->right_subtree == new_node) {
-                new_node->parent->right_subtree = new_node->right_subtree;
-            } else {
-                new_node->parent->left_subtree = new_node->right_subtree;
-            }
-        }
-        rebalance_to_node(new_node->parent, node_to_delete);
-
-
-        if (node_to_delete->parent != nullptr) {
-            if (node_to_delete->parent->right_subtree == node_to_delete) {
-                node_to_delete->parent->right_subtree = new_node;
-            } else {
-                node_to_delete->parent->left_subtree = new_node;
-            }
-        }
-
-        new_node->parent = node_to_delete->parent;
-        new_node->left_subtree = node_to_delete->left_subtree;
-        new_node->right_subtree = node_to_delete->right_subtree;
-
-        if (new_node->left_subtree) {
-            new_node->left_subtree->parent = new_node;
-        }
-        if (new_node->right_subtree) {
-            new_node->right_subtree->parent = new_node;
-        }
-    }
-
-    if (node_to_delete->parent == nullptr) {
-        parent::_root = new_node;
-    }
-    parent::_size--;
-    __detail::bst_impl<tkey, tvalue, compare, __detail::AVL_TAG>::erase(*this, &node_to_delete);
-    __detail::bst_impl<tkey, tvalue, compare, __detail::AVL_TAG>::delete_node(*this, node_to_delete);
-
-
-    if (next_node.get_node() != nullptr) {
-        if (std::prev(next_node).get_node() != nullptr) {
-            next_node--;
-        }
-    }
-
-    return next_node;
+    infix_iterator it();
+    return it;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
