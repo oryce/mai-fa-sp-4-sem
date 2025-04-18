@@ -772,17 +772,13 @@ AVL_tree<tkey, tvalue, compare>::node::node(parent::node *par, Args &&... args)
 // region prefix_iterator implementation
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
-AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::node *n) noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::node*) noexcept",
-            "your code should be here...");
+AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::node *n) noexcept : parent::prefix_iterator(n){
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
-AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix_iterator it) noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix_iterator) noexcept",
-            "your code should be here...");
+AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix_iterator it) noexcept : parent::prefix_iterator(it){
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -998,9 +994,8 @@ AVL_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(pare
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_const_iterator::get_height() const noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> size_t AVL_tree<tkey, tvalue, compare>::infix_const_iterator::get_height() const noexcept",
-            "your code should be here...");
+    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node*>(parent::infix_const_iterator::_base.get_node());
+    return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1537,17 +1532,13 @@ AVL_tree<tkey, tvalue, compare>::end_infix() const noexcept {
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename AVL_tree<tkey, tvalue, compare>::infix_const_iterator
 AVL_tree<tkey, tvalue, compare>::cbegin_infix() const noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> typename AVL_tree<tkey, tvalue, compare>::infix_const_iterator AVL_tree<tkey, tvalue, compare>::cbegin_infix() const noexcept",
-            "your code should be here...");
+    return parent::cbegin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename AVL_tree<tkey, tvalue, compare>::infix_const_iterator
 AVL_tree<tkey, tvalue, compare>::cend_infix() const noexcept {
-    throw not_implemented(
-            "template<typename tkey, typename tvalue, compator<tkey> compare> typename AVL_tree<tkey, tvalue, compare>::infix_const_iterator AVL_tree<tkey, tvalue, compare>::cend_infix() const noexcept",
-            "your code should be here...");
+    return parent::cend_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>

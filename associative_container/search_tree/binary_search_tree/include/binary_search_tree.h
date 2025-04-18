@@ -327,7 +327,7 @@ public:
 
         pointer operator->() noexcept;
         size_t depth() const noexcept;
-        node *get_node();
+        node *get_node() const;
     };
 
     class infix_const_iterator
@@ -1353,7 +1353,7 @@ size_t binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_reverse_iter
 //region infix_iterator implementation
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag>::node *
-binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::get_node() {
+binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::get_node() const  {
     return _data;
 }
 
