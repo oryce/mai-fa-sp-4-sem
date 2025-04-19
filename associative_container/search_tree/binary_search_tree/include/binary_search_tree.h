@@ -2184,7 +2184,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::lower_bound(const tkey &key) {
     node *current = _root;
     while (current != nullptr) {
         if (compare_keys(key, current->data.first)) {
-            if (current->left_subtree != nullptr && compare_keys(key, current->left_subtree->data.first)) {
+            if (compare_keys(key, current->left_subtree->data.first)) {
                 current = current->left_subtree;
             } else {
                 break;
@@ -2196,7 +2196,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::lower_bound(const tkey &key) {
     if (current == nullptr) {
         return end_infix();
     }
-    infix_iterator it(current);
+    infix_iterator it(current->left_subtree);
     return it;
 }
 
@@ -2230,7 +2230,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) {
         if (compare_keys(key, current->data.first)) {
             current = current->left_subtree;
         } else {
-            if (current->right_subtree != nullptr && compare_keys(current->left_subtree->data.first, key)) {
+            if (current->right_subtree != nullptr && compare_keys(current->right_subtree->data.first, key)) {
                 current = current->right_subtree;
             } else {
                 break;
@@ -2240,7 +2240,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) {
     if (current == nullptr) {
         return end_infix();
     }
-    infix_iterator it(current);
+    infix_iterator it(current->right_subtree);
     return it;
 }
 

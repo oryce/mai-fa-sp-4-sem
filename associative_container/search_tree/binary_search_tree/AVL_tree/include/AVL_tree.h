@@ -683,9 +683,12 @@ namespace __detail {
         } else {
             typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *successor;
 
-            successor = node_to_delete->right_subtree;
+            successor = node_to_delete->left_subtree;
             while (successor->left_subtree) {
-                successor = successor->left_subtree;
+                if (successor->right_subtree == nullptr){
+                    break;
+                }
+                successor = successor->right_subtree;
             }
 
             new_node = successor;
@@ -709,9 +712,14 @@ namespace __detail {
                 }
             }
 
+            //Managing case when new_node is child f node_to_delete
+            if (new_node->parent == node_to_delete) {
+                new_node->right_subtree = node_to_delete->right_subtree;
+            } else {
+                new_node->left_subtree = node_to_delete->left_subtree;
+                new_node->right_subtree = node_to_delete->right_subtree;
+            }
             new_node->parent = node_to_delete->parent;
-            new_node->left_subtree = node_to_delete->left_subtree;
-            new_node->right_subtree = node_to_delete->right_subtree;
 
             if (new_node->left_subtree) {
                 new_node->left_subtree->parent = new_node;
@@ -1785,7 +1793,7 @@ AVL_tree<tkey, tvalue, compare>::find(const tkey &key) const {
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename AVL_tree<tkey, tvalue, compare>::infix_iterator
 AVL_tree<tkey, tvalue, compare>::lower_bound(const tkey &key) {
-    return infix_iterator();
+    return parent::lower_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1797,7 +1805,7 @@ AVL_tree<tkey, tvalue, compare>::lower_bound(const tkey &key) const {
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename AVL_tree<tkey, tvalue, compare>::infix_iterator
 AVL_tree<tkey, tvalue, compare>::upper_bound(const tkey &key) {
-    return infix_iterator();
+    return parent::upper_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
