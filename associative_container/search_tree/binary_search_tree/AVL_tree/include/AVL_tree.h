@@ -627,6 +627,13 @@ namespace __detail {
         }
     }
 
+
+    //Работает следующим образом:
+    //Если у удаляемого элемента нет правого поддерева, то мы просто передвигаем его левое поддерево на его место.
+    //Если у удаляемого элемента есть правое поддерево, то мы находим в нем самый левый элемент и ставим его на место удаляемого.
+    //После этого запускаем ребалансировку от нового элемента до корня.
+    //Не самый оптимальный алгоритм (вероятно), но ассимптотитечски он ничего не портит, О(log n) остается.
+    
     template<typename tkey, typename tvalue, typename compare>
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::erase(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
@@ -646,15 +653,12 @@ namespace __detail {
             } else {
                 parent->right_subtree = node_to_delete->left_subtree;
             }
-            avl_tree.rebalance_to_node(node_to_delete, avl_tree._root);
+            new_node = node_to_delete->left_subtree;
         } else {
             typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *successor;
 
             successor = node_to_delete->left_subtree;
-            while (successor->left_subtree) {
-                if (successor->right_subtree == nullptr) {
-                    break;
-                }
+            while (successor->right_subtree) {
                 successor = successor->right_subtree;
             }
 
@@ -679,7 +683,7 @@ namespace __detail {
                 }
             }
 
-            //Managing case when new_node is child f node_to_delete
+            //Managing case when new_node is child of node_to_delete
             if (new_node->parent == node_to_delete) {
                 new_node->right_subtree = node_to_delete->right_subtree;
             } else {
