@@ -58,6 +58,8 @@ public:
 
     using value_type = parent::value_type;
 
+    //Весь смысл всех этих итераторов только в том, что они преобразовывают итераторы обычного бинарного дерева в итераторы авл дерева.
+    //Никакой дополнительной логики у них нет.
     // region iterator definition
 
     class prefix_iterator : public parent::prefix_iterator {
@@ -419,8 +421,6 @@ public:
 
     // region iterator requests declaration
 
-    //Весь смысл всех этих итераторов только в том, что они преобразовывают итераторы обычного бинарного дерева в итератора авл дерева.
-    //Никакой дополнительной логики у них нет.
     infix_iterator begin() noexcept;
 
     infix_iterator end() noexcept;
