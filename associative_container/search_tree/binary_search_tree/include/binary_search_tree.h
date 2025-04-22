@@ -321,8 +321,6 @@ public:
 
         explicit infix_iterator(node* data = nullptr);
 
-        explicit infix_iterator(node *data = nullptr);
-
         virtual ~infix_iterator() = default;
 
         bool operator==(
@@ -1438,16 +1436,6 @@ binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::operator==(infix
         return _backup == other._backup;
     }
 
-}
-
-template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
-bool
-binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::operator==(infix_iterator const &other) const noexcept {
-    if (_data != nullptr || other._data != nullptr) {
-        return _data == other._data;
-    } else {
-        return _backup == other._backup;
-    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -3049,70 +3037,6 @@ binary_search_tree<tkey, tvalue, compare, tag>::binary_search_tree(const binary_
         insert(*iter_other);
         iter_other++;
 
-    }
-
-    *_logger = *other._logger;
-    _allocator = other._allocator;
-}
-
-template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
-binary_search_tree<tkey, tvalue, compare, tag>::binary_search_tree(binary_search_tree &&other) noexcept {
-    _root = other._root;
-    _logger = other._logger;
-    _allocator = other._allocator;
-    _size = other._size;
-    other._root = nullptr;
-    other._size = 0;
-}
-
-template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
-binary_search_tree<tkey, tvalue, compare, tag> &
-binary_search_tree<tkey, tvalue, compare, tag>::operator=(const binary_search_tree &other) {
-    if (this == &other)
-        return *this;
-
-    while (size() != 0) {
-        erase(begin_infix());
-    }
-
-    prefix_const_iterator iter_other = other.begin_prefix();
-
-    while (iter_other != other.end_prefix()) {
-        insert(*iter_other);
-        iter_other++;
-    }
-
-    *_logger = *other._logger;
-    _allocator = other._allocator;
-    return *this;
-}
-
-template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
-binary_search_tree<tkey, tvalue, compare, tag> &
-binary_search_tree<tkey, tvalue, compare, tag>::operator=(binary_search_tree &&other) noexcept {
-    if (this == &other)
-        return *this;
-
-    while (size() != 0) {
-        erase(begin_infix());
-    }
-
-    _root = other._root;
-    _logger = other._logger;
-    _allocator = other._allocator;
-    return *this;
-}
-
-template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
-binary_search_tree<tkey, tvalue, compare, tag>::~binary_search_tree() {
-    std::vector<node *> vec;
-    infix_iterator it = begin();
-    while (it != end()) {
-        vec.push_back(it.get_node());
-        it++;
-    }
-    for (node *n: vec) {
-        __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(*this, n);
     }
 
     *_logger = *other._logger;
