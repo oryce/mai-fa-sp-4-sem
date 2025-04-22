@@ -569,7 +569,7 @@ public:
 
     static parent::node *rebalance(parent::node *to_balance);
 
-    void rebalance_to_node(parent::node *from, parent::node *to);
+    void rebalance_to_root(parent::node *from);
 };
 
 template<typename compare, typename U, typename iterator>
@@ -644,7 +644,6 @@ namespace __detail {
             throw std::out_of_range("Incorrect iterator for erase\n");
         }
 
-        //node* prev = (std::prev(pos)).get_node();
         auto *parent = node_to_delete->parent;
         typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *new_node = nullptr;
         if (node_to_delete->right_subtree == nullptr) {
@@ -703,7 +702,7 @@ namespace __detail {
         if (node_to_delete->parent == nullptr) {
             avl_tree._root = new_node;
         }
-        avl_tree.rebalance_to_node(new_node, avl_tree._root);
+        avl_tree.rebalance_to_root(new_node);
         avl_tree._size--;
         __detail::bst_impl<tkey, tvalue, compare, __detail::AVL_TAG>::delete_node(cont, node_to_delete);
         *node = new_node;
@@ -1548,6 +1547,14 @@ void AVL_tree<tkey, tvalue, compare>::swap(parent &other) noexcept {
 
 // region AVL_tree methods
 
+//Функция возвращает указатель на ноду, которая заменила старую ноду, если был произведен поворот, т.е.
+//
+//  cur                          cur
+//   ↓                            ↓
+//   a      какой то поворот      b
+// b   c    ---------------->       a
+//                                    c
+//
 template<typename tkey, typename tvalue, compator<tkey> compare>
 binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::node *
 AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *to_balance) {
@@ -1588,11 +1595,11 @@ AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *to_balance) {
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
-void AVL_tree<tkey, tvalue, compare>::rebalance_to_node(parent::node *from, parent::node *to) {
+void AVL_tree<tkey, tvalue, compare>::rebalance_to_root(parent::node *from) {
     auto cur = from;
     while (cur != nullptr) {
+        cur = AVL_tree<tkey, tvalue, compare>::rebalance(cur);
         dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
-        AVL_tree<tkey, tvalue, compare>::rebalance(cur);
         if (cur->parent == nullptr) {
             this->_root = cur;
         }
