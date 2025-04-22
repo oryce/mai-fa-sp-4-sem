@@ -413,7 +413,7 @@ allocator_boundary_tags::boundary_iterator &allocator_boundary_tags::boundary_it
 {
     const auto block = static_cast<block_metadata*>(_occupied_ptr);
 
-    if (_occupied)
+    if (!_occupied)
     {
         _occupied = true;
     }
