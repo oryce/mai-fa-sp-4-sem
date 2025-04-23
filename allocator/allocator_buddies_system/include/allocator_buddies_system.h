@@ -41,21 +41,38 @@ class allocator_buddies_system final:
 
 private:
 
+    struct allocator_metadata 
+    {
+        logger *logger;
+        /** Аллокатор, которым была выделена доверенная память. */
+        std::pmr::memory_resource *allocator;
+        /** Режим поиска свободных блоков: первый подходящий, 
+         * наиболее/наименее подходящий. */
+        fit_mode fit_mode;
+        /** Степень двойки размера доверенной памяти. */
+        unsigned char size_k;
+        /** Мьютекс для синхронизации обращений к блокам. */
+        std::mutex mutex;
+
+        size_t size() const noexcept {
+            return 1 << size_k;
+        }
+    };
 
     struct block_metadata
     {
         bool occupied : 1;
-        unsigned char size : 7;
+        unsigned char size_k : 7;
+
+        /** Возвращает размер блока в байтах вместе с метаданными. */
+        size_t block_size() const noexcept {
+            return 1 << (size_k + min_k);
+        }
     };
 
     void *_trusted_memory;
 
-    /**
-     * TODO: You must improve it for alignment support
-     */
-
-    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(allocator_dbg_helper*) + sizeof(fit_mode) + sizeof(unsigned char) + sizeof(std::mutex);
-
+    /** Содержит ещё и указатель на доверенную память. */
     static constexpr const size_t occupied_block_metadata_size = sizeof(block_metadata) + sizeof(void*);
 
     static constexpr const size_t free_block_metadata_size = sizeof(block_metadata);
@@ -71,10 +88,10 @@ public:
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
 
     allocator_buddies_system(
-        allocator_buddies_system const &other);
+        allocator_buddies_system const &other) = delete;
     
     allocator_buddies_system &operator=(
-        allocator_buddies_system const &other);
+        allocator_buddies_system const &other) = delete;
     
     allocator_buddies_system(
         allocator_buddies_system &&other) noexcept;
@@ -109,7 +126,15 @@ private:
 
     std::vector<allocator_test_utils::block_info> get_blocks_info_inner() const override;
 
-    /** TODO: Highly recommended for helper functions to return references */
+    block_metadata* get_block_first_fit(size_t size) const;
+
+    block_metadata* get_block_best_fit(size_t size) const;
+
+    block_metadata* get_block_worst_fit(size_t size) const;
+
+    block_metadata* get_buddy(block_metadata* block) const;
+
+    size_t available_memory() const noexcept;
 
     class buddy_iterator
     {
