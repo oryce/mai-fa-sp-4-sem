@@ -41,3 +41,5 @@ cmake-build-debug/
 
 # VS Code build directory
 build/
+
+**/.DS_Store
