@@ -2933,7 +2933,7 @@ namespace __detail {
     typename binary_search_tree<tkey, tvalue, compare, tag>::node *
     bst_impl<tkey, tvalue, compare, tag>::create_node(binary_search_tree<tkey, tvalue, compare, tag> &cont,
                                                       Args &&...args) {
-        typename binary_search_tree<tkey, tvalue, compare, tag>::node *n = cont._allocator.new_object<typename binary_search_tree<tkey, tvalue, compare, tag>::node>(
+        typename binary_search_tree<tkey, tvalue, compare, tag>::node *n = cont._allocator.template new_object<typename binary_search_tree<tkey, tvalue, compare, tag>::node>(
                 args ...);
         return n;
     }
