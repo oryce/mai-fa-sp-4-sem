@@ -11,13 +11,14 @@ namespace __detail
     template<typename tkey, typename tvalue, typename compare>
     class bst_impl<tkey, tvalue, compare, SPG_TAG>
     {
+    public:
         template<class ...Args>
         static binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node* create_node(binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont, Args&& ...args);
 
-        static void delete_node(binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont);
+        static void delete_node(binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont, binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node*);
 
         //Does not invalidate node*, needed for splay tree
-        static void post_search(binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node**){}
+        static void post_search(binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node**);
 
         //Does not invalidate node*
         static void post_insert(binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont, binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node**);
@@ -26,6 +27,66 @@ namespace __detail
 
         static void swap(binary_search_tree<tkey, tvalue, compare, SPG_TAG>& lhs, binary_search_tree<tkey, tvalue, compare, SPG_TAG>& rhs) noexcept;
     };
+}
+
+namespace __detail {
+
+    // create_node
+    template<typename tkey, typename tvalue, typename compare>
+    template<class ...Args>
+    binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node*
+    bst_impl<tkey, tvalue, compare, SPG_TAG>::create_node(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont,
+            Args&& ...args)
+    {
+        // TODO: implement
+        return nullptr;
+    }
+
+    // delete_node
+    template<typename tkey, typename tvalue, typename compare>
+    void bst_impl<tkey, tvalue, compare, SPG_TAG>::delete_node(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont,
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node* node)
+    {
+        // TODO: implement
+    }
+
+    // post_search
+    template<typename tkey, typename tvalue, typename compare>
+    void bst_impl<tkey, tvalue, compare, SPG_TAG>::post_search(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node** node_ptr)
+    {
+        // Empty as per requirements
+    }
+
+    // post_insert
+    template<typename tkey, typename tvalue, typename compare>
+    void bst_impl<tkey, tvalue, compare, SPG_TAG>::post_insert(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont,
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node** node_ptr)
+    {
+        // TODO: implement
+    }
+
+    // erase
+    template<typename tkey, typename tvalue, typename compare>
+    void bst_impl<tkey, tvalue, compare, SPG_TAG>::erase(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& cont,
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>::node** node_ptr)
+    {
+        // TODO: implement
+    }
+
+    // swap
+    template<typename tkey, typename tvalue, typename compare>
+    void bst_impl<tkey, tvalue, compare, SPG_TAG>::swap(
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& lhs,
+            binary_search_tree<tkey, tvalue, compare, SPG_TAG>& rhs) noexcept
+    {
+        // TODO: implement
+    }
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare = std::less<tkey>>
