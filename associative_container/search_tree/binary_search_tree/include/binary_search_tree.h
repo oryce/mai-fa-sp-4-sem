@@ -2261,9 +2261,9 @@ binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) {
         }
     }
 
-    auto mx = prev > prev_prev ? prev : prev_prev;
-    auto mn = prev < prev_prev ? prev : prev_prev;
-
+    //Искомое значение находится где-то между prev_prev и prev
+    auto mx = prev->data.first > prev_prev->data.first ? prev : prev_prev;
+    auto mn = prev->data.first < prev_prev->data.first ? prev : prev_prev;
     if (compare_keys(key, mn->data.first)){
         return infix_iterator(mn);
     } else {
