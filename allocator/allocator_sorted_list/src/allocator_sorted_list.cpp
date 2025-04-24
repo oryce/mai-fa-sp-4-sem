@@ -139,7 +139,6 @@ void *allocator_sorted_list::do_allocate_sm(size_t size) {
     auto mode = get_fit_mode();
     sorted_free_iterator prev_iter;
     for (auto it = free_begin(); it != free_end(); prev_iter = it, ++it) {
-//        std::cout << *it << std::endl;
         auto block_size = it.size();
         if (block_size >= size + block_metadata_size) {
             if (mode == fit_mode::first_fit) {
@@ -190,7 +189,6 @@ void *allocator_sorted_list::do_allocate_sm(size_t size) {
         ptr = (new_block != nullptr) ? new_block : get_next_ptr(result_block);
         set_first_free_block_pointer(ptr);
     }
-    set_next_ptr(result_block, nullptr);
 
     if (l != nullptr){
         l->information("Memory left: ");
