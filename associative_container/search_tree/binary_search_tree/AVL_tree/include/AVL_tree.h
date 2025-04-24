@@ -7,14 +7,16 @@ namespace __detail {
     class AVL_TAG;
 
     template<typename tkey, typename tvalue, typename compare>
-    class bst_impl<tkey, tvalue, compare, AVL_TAG> {
+
+    class bst_impl<tkey, tvalue, compare, AVL_TAG>
+    {
     public:
         template<class ...Args>
         static binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *
         create_node(binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont, Args &&...args);
 
-        static void delete_node(binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
-                                binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *n);
+
+        static void delete_node(binary_search_tree<tkey, tvalue, compare, AVL_TAG>& cont, binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node*);
 
         //Does not invalidate node*, needed for splay tree
         static void post_search(binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node **) {}

@@ -7,17 +7,18 @@ namespace __detail {
     class SPL_TAG;
 
     template<typename tkey, typename tvalue, typename compare>
-    class bst_impl<tkey, tvalue, compare, SPL_TAG> {
+
+    class bst_impl<tkey, tvalue, compare, SPL_TAG>
+    {
     public:
         template<class ...Args>
         static binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node *
         create_node(binary_search_tree<tkey, tvalue, compare, SPL_TAG> &cont, Args &&...args);
 
-        static void delete_node(binary_search_tree<tkey, tvalue, compare, SPL_TAG> &cont,
-                                binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node *);
+        static void delete_node(binary_search_tree<tkey, tvalue, compare, SPL_TAG>& cont, binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node*);
 
         //Does not invalidate node*, needed for splay tree
-        static void post_search(binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node **);
+        static void post_search(binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node**);
 
         //Does not invalidate node*
         static void post_insert(binary_search_tree<tkey, tvalue, compare, SPL_TAG> &cont,
@@ -91,10 +92,8 @@ public:
     std::pair<typename parent::node *, typename parent::node *> split(const tkey key);
 };
 
-
-
-
 // region other
+
 template<typename compare, typename U, typename iterator>
 explicit splay_tree(iterator begin, iterator end, const compare &cmp = compare(),
                     pp_allocator<U> alloc = pp_allocator<U>(),
