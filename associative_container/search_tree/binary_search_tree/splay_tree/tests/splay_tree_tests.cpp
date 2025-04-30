@@ -511,9 +511,13 @@ TEST(splayTreePositiveTests, test10)
             { 8, "c" },
             { 9, "h" }
         };
-
+    auto it = splay->begin();
+    while(it != splay->end_infix()){
+        std::cout << it.get_data()->data.first << " ";
+        it++;
+    }
     EXPECT_TRUE(compare_results(expected_result, actual_result));
-
+    //2 4 6 8 9 11 15 18
     logger->trace("splayTreePositiveTests.test10 finished");
 }
 
