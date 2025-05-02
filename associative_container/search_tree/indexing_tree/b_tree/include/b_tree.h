@@ -357,7 +357,7 @@ public:
 
     btree_iterator erase(const tkey& key);
 
-    void delete_key_from_leaf(size_t, B_tree::btree_node*, std::stack<std::pair<btree_node**, size_t>>);
+    void delete_key_from_leaf(size_t, B_tree::btree_node*, std::stack<std::pair<btree_node*, size_t>>);
     std::pair<btree_node*, btree_node*> split(btree_node*, btree_node*);
     void merge(B_tree::btree_node*, B_tree::btree_node*, B_tree::btree_node*, size_t);
 
@@ -1324,19 +1324,25 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
     size_t i = 0;
     size_t prev_i = -1;
     auto cur_node = _root;
-    std::stack<std::pair<btree_node**, size_t>> st = std::stack<std::pair<btree_node**, size_t>>();
+    std::stack<std::pair<btree_node*, size_t>> st = std::stack<std::pair<btree_node*, size_t>>();
+    B_tree<tkey, tvalue, compare, t>::btree_node* parent = nullptr;
     //находим нужный ключ
     while(cur_node != nullptr){
         i = 0;
         for(; compare_keys(cur_node->_keys[i].first, key); i++){}
+        st.push(std::pair<btree_node*, size_t>(cur_node, prev_i));
         if (cur_node->_keys[i].first == key){
             break;
         }
-        st.push(std::pair<btree_node**, size_t>(&cur_node, prev_i));
+
+        parent = cur_node;
         cur_node = cur_node->_pointers[i];
         prev_i = i;
     }
-    B_tree<tkey, tvalue, compare, t>::btree_node* parent = *st.top().first;
+
+    if (cur_node == nullptr){
+        throw std::logic_error("incorrect node for erase");
+    }
 
     //проверяем, является ли листом
     bool is_leaf = true;
@@ -1359,22 +1365,26 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
         B_tree<tkey, tvalue, compare, t>::btree_node* n;
         if (!i_pointer_is_null){
             n = cur_node->_pointers[i];
+            st.push(std::pair(n, i));
             while(n->_pointers.size() > 0 && n->_pointers[n->_pointers.size() - 1] != nullptr){
+                size_t tmp = n->_pointers.size() - 1;
                 n = n->_pointers[n->_pointers.size() - 1];
+                st.push(std::pair(n, tmp));
             }
             new_data = &n->_keys[n->_keys.size() - 1];
             index = n->_keys.size() - 1;
         } else {
             n = cur_node->_pointers[i + 1];
+            st.push(std::pair(n, i + 1));
             while(n->_pointers.size() > 0 && n->_pointers[0] != nullptr){
                 n = n->_pointers[0];
+                st.push(std::pair(n, 0));
             }
             new_data = &n->_keys[0];
             index = 0;
         }
 
         cur_node->_keys[i] = std::move(*new_data);
-
         delete_key_from_leaf(index, n,st);
     }
     return B_tree<tkey, tvalue, compare, t>::btree_iterator();
@@ -1382,18 +1392,17 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index, B_tree::btree_node * node,
-                                                            std::stack<std::pair<btree_node**, size_t>> st) {
+                                                            std::stack<std::pair<btree_node*, size_t>> st) {
     if (node->_keys.size() > minimum_keys_in_node){
         node->_keys.erase(node->_keys.begin() + index);
         return;
     }
-
-    while(!st.empty()) {
-        B_tree::btree_node *cur_node = *st.top().first;
-        size_t i = st.top().second; //index of node in parent node
-        st.pop();
-        B_tree::btree_node *parent = st.empty() ? nullptr : *st.top().first;
-
+    B_tree::btree_node *cur_node = st.top().first;
+    size_t i = st.top().second;
+    st.pop();
+    while(cur_node != nullptr) {
+        //index of node in parent node
+        B_tree::btree_node *parent = st.empty() ? nullptr : st.top().first;
         if (parent == nullptr) {
             if (cur_node->_keys.size() > 1) {
                 cur_node->_keys.erase(cur_node->_keys.begin() + index);
@@ -1431,6 +1440,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index, B_tree
             node->_keys[index] = parent->_keys[i];
             parent->_keys[i] = parent->_pointers[i + 1]->_keys[0];
         } else {
+            node->_keys.erase(node->_keys.begin() + index);
             if (size_left_sibling > 0) {
                 merge(parent->_pointers[i - 1], cur_node, parent, i - 1);
             } else if (size_right_sibling > 0) {
@@ -1441,6 +1451,9 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index, B_tree
             }
         }
         index = i;
+        cur_node = st.empty() ? nullptr : st.top().first;
+        i = cur_node ? st.top().second : -1;
+        st.pop();
     }
 }
 
@@ -1453,9 +1466,12 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
     new_node->_pointers.push_back(parent->_pointers[split_key_index]);
     new_node->_keys.insert(new_node->_keys.end(), right->_keys.begin(), right->_keys.end());
     new_node->_pointers.insert(new_node->_pointers.end(), right->_pointers.begin(), right->_pointers.end());
-    parent->_keys[split_key_index] = new_node->_keys.back();
+//    parent->_keys[split_key_index] = new_node->_keys.back();
     parent->_pointers[split_key_index] = new_node;
-    parent->_pointers[split_key_index + 1] = nullptr;
+//    parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
+    for(size_t j = split_key_index + 1; j < parent->_pointers.size() - 1; j++){
+        parent->_pointers[j] = parent->_pointers[j + 1];
+    }
     _allocator.delete_object(left);
     _allocator.delete_object(right);
 }
