@@ -19,15 +19,46 @@ class allocator_boundary_tags final :
 
 private:
 
-    /**
-     * TODO: You must improve it for alignment support
-     */
-    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(memory_resource*) + sizeof(allocator_with_fit_mode::fit_mode) +
-                                                            sizeof(size_t) + sizeof(std::mutex) + sizeof(void*);
+    struct block_metadata
+    {
+        /** Размер блока без учёта метаданных. */
+        size_t block_size_;
+        block_metadata* next_ = nullptr;
+        block_metadata* prev_ = nullptr;
+        /** Указатель на доверенную область памяти. */
+        void* tm_ptr_;
 
-    static constexpr const size_t occupied_block_metadata_size = sizeof(size_t) + sizeof(void*) + sizeof(void*) + sizeof(void*);
+        std::byte* block_end() noexcept
+        {
+            return reinterpret_cast<std::byte*>(this) + sizeof(block_metadata) + block_size_;
+        }
 
-    static constexpr const size_t free_block_metadata_size = 0;
+        const std::byte* block_end() const noexcept
+        {
+            return reinterpret_cast<const std::byte*>(this) + sizeof(block_metadata) + block_size_;
+        }
+    };
+
+    struct allocator_metadata
+    {
+        logger* logger_;
+        /** Задаёт алгоритм поиска блоков (первый подходящий, наиболее подходящий,
+         * наименее подходящий). */
+        fit_mode fit_mode_;
+        /** Размер доверенной памяти без учёта метаданных аллокатора. */
+        size_t mem_size_;
+        /** Мьютекс для синхронизации обращений к списку блоков. */
+        std::mutex mutex_;
+        /** Связный список выделенных блоков. */
+        block_metadata* first_block_;
+        /** Указатель на аллокатор, которым была выделена доверенная память. */
+        memory_resource* allocator_;
+
+        const std::byte* allocator_end() const noexcept
+        {
+            return reinterpret_cast<const std::byte*>(this) + sizeof(allocator_metadata) + mem_size_;
+        }
+    };
 
     void *_trusted_memory;
 
@@ -35,9 +66,9 @@ public:
     
     ~allocator_boundary_tags() override;
     
-    allocator_boundary_tags(allocator_boundary_tags const &other);
+    allocator_boundary_tags(allocator_boundary_tags const &other) = delete;
     
-    allocator_boundary_tags &operator=(allocator_boundary_tags const &other);
+    allocator_boundary_tags &operator=(allocator_boundary_tags const &other) = delete;
     
     allocator_boundary_tags(
         allocator_boundary_tags &&other) noexcept;
@@ -81,6 +112,24 @@ private:
     inline logger *get_logger() const override;
 
     inline std::string get_typename() const noexcept override;
+
+    inline allocator_metadata& get_allocator_metadata() const noexcept;
+
+    static inline allocator_metadata& get_allocator_metadata(void* trusted) noexcept;
+
+    static inline const allocator_metadata& get_allocator_metadata(const void* trusted) noexcept;
+
+    inline block_metadata* get_block_first_fit(size_t size) const noexcept;
+
+    inline block_metadata* get_block_best_fit(size_t size) const noexcept;
+
+    inline block_metadata* get_block_worst_fit(size_t size) const noexcept;
+
+    inline size_t get_next_free_block_size(const block_metadata* block) const noexcept;
+
+    static inline size_t get_next_free_block_size(void* trusted, const block_metadata* block) noexcept;
+
+    inline size_t get_available_memory() const noexcept;
 
     class boundary_iterator
     {

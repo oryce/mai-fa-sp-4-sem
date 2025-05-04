@@ -9,21 +9,22 @@
 #include <iterator>
 #include <mutex>
 
-class allocator_sorted_list final:
-    public smart_mem_resource,
-    public allocator_test_utils,
-    public allocator_with_fit_mode,
-    private logger_guardant,
-    private typename_holder
-{
+class allocator_sorted_list final :
+        public smart_mem_resource,
+        public allocator_test_utils,
+        public allocator_with_fit_mode,
+        private logger_guardant,
+        private typename_holder {
 
 private:
-    
+
     void *_trusted_memory;
 
-    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(std::pmr::memory_resource *) + sizeof(fit_mode) + sizeof(size_t) + sizeof(std::mutex) + sizeof(void*);
+    static constexpr const size_t allocator_metadata_size =
+            sizeof(logger *) + sizeof(std::pmr::memory_resource *) + sizeof(fit_mode) + sizeof(size_t) +
+            sizeof(std::mutex) + sizeof(void *);
 
-    static constexpr const size_t block_metadata_size = sizeof(void*) + sizeof(size_t);
+    static constexpr const size_t block_metadata_size = sizeof(void *) + sizeof(size_t);
 
 public:
 
@@ -32,112 +33,134 @@ public:
             std::pmr::memory_resource *parent_allocator = nullptr,
             logger *logger = nullptr,
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
-    
-    allocator_sorted_list(
-        allocator_sorted_list const &other);
-    
-    allocator_sorted_list &operator=(
-        allocator_sorted_list const &other);
 
     allocator_sorted_list(
-        allocator_sorted_list &&other) noexcept;
-    
+            allocator_sorted_list const &other) = delete;
+
     allocator_sorted_list &operator=(
-        allocator_sorted_list &&other) noexcept;
+            allocator_sorted_list const &other) = delete;
+
+    allocator_sorted_list(
+            allocator_sorted_list &&other) noexcept;
+
+    allocator_sorted_list &operator=(
+            allocator_sorted_list &&other) noexcept;
 
     ~allocator_sorted_list() override;
-    
-    [[nodiscard]] void *do_allocate_sm(
-        size_t size) override;
-    
-    void do_deallocate_sm(
-        void *at) override;
 
-    bool do_is_equal(const std::pmr::memory_resource&) const noexcept override;
-    
+    [[nodiscard]] void *do_allocate_sm(
+            size_t size) override;
+
+    void do_deallocate_sm(
+            void *at) override;
+
+    bool do_is_equal(const std::pmr::memory_resource &) const noexcept override;
+
     inline void set_fit_mode(
-        allocator_with_fit_mode::fit_mode mode) override;
+            allocator_with_fit_mode::fit_mode mode) override;
 
     std::vector<allocator_test_utils::block_info> get_blocks_info() const noexcept override;
 
 private:
 
     std::vector<allocator_test_utils::block_info> get_blocks_info_inner() const override;
-    
+
     inline logger *get_logger() const override;
-    
+
     inline std::string get_typename() const override;
 
-    class sorted_free_iterator
-    {
-        void* _free_ptr;
+    class sorted_free_iterator {
+        void *_free_ptr;
 
     public:
 
         using iterator_category = std::forward_iterator_tag;
-        using value_type = void*;
-        using reference = void*&;
-        using pointer = void**;
+        using value_type = void *;
+        using reference = void *&;
+        using pointer = void **;
         using difference_type = ptrdiff_t;
 
-        bool operator==(const sorted_free_iterator&) const noexcept;
+        bool operator==(const sorted_free_iterator &) const noexcept;
 
-        bool operator!=(const sorted_free_iterator&) const noexcept;
+        bool operator!=(const sorted_free_iterator &) const noexcept;
 
-        sorted_free_iterator& operator++() & noexcept;
+        sorted_free_iterator &operator++() & noexcept;
 
         sorted_free_iterator operator++(int n);
 
         size_t size() const noexcept;
 
-        void* operator*() const noexcept;
+        void *operator*() const noexcept;
 
         sorted_free_iterator();
 
-        sorted_free_iterator(void* trusted);
+        explicit sorted_free_iterator(void *trusted);
     };
 
-    class sorted_iterator
-    {
-        void* _free_ptr;
-        void* _current_ptr;
-        void* _trusted_memory;
+    class sorted_iterator {
+        void *_free_ptr;
+        void *_current_ptr;
+        void *_trusted_memory;
 
     public:
 
         using iterator_category = std::forward_iterator_tag;
-        using value_type = void*;
-        using reference = void*&;
-        using pointer = void**;
+        using value_type = void *;
+        using reference = void *&;
+        using pointer = void **;
         using difference_type = ptrdiff_t;
 
-        bool operator==(const sorted_iterator&) const noexcept;
+        bool operator==(const sorted_iterator &) const noexcept;
 
-        bool operator!=(const sorted_iterator&) const noexcept;
+        bool operator!=(const sorted_iterator &) const noexcept;
 
-        sorted_iterator& operator++() & noexcept;
+        sorted_iterator &operator++() & noexcept;
 
         sorted_iterator operator++(int n);
 
         size_t size() const noexcept;
 
-        void* operator*() const noexcept;
+        void *operator*() const noexcept;
 
-        bool occupied()const noexcept;
+        bool occupied() const noexcept;
 
         sorted_iterator();
 
-        sorted_iterator(void* trusted);
+        sorted_iterator(void *trusted);
     };
-
     friend class sorted_iterator;
+
     friend class sorted_free_iterator;
 
     sorted_free_iterator free_begin() const noexcept;
+
     sorted_free_iterator free_end() const noexcept;
 
     sorted_iterator begin() const noexcept;
+
     sorted_iterator end() const noexcept;
+
+    std::mutex &get_mutex();
+
+    fit_mode &get_fit_mode();
+
+    bool try_merge(uint8_t *left, uint8_t *right);
+
+    void *get_first_free_block_pointer() const;
+
+    static void *get_next_ptr(void *block_header);
+
+    void set_next_ptr(void *block_header, void *new_ptr);
+
+    void set_size_in_block_metadata(void *block_header, size_t new_size);
+
+    void set_first_free_block_pointer(void *new_pointer);
+
+    static size_t get_size(void *block_header);
+
+    static size_t get_space_size(void*);
+
+    size_t get_free_memory_count();
 };
 
 #endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_SORTED_LIST_H
