@@ -9,8 +9,7 @@
 #include <ranges>
 #include <pp_allocator.h>
 
-namespace __detail
-{
+namespace __detail {
     template<typename tkey, typename tvalue, typename compare, typename tag>
     class bst_impl;
 
@@ -19,8 +18,7 @@ namespace __detail
 
 
 template<typename tkey, typename tvalue, compator<tkey> compare = std::less<tkey>, typename tag = __detail::BST_TAG>
-class binary_search_tree : private compare
-{
+class binary_search_tree : private compare {
 public:
 
     using value_type = std::pair<const tkey, tvalue>;
@@ -29,6 +27,7 @@ public:
 
 protected:
 
+
     struct node
     {
 
@@ -36,20 +35,20 @@ protected:
 
         value_type data;
 
-        node* parent;
-        node* left_subtree;
-        node* right_subtree;
+        node *parent;
+        node *left_subtree;
+        node *right_subtree;
 
         template<class ...Args>
-        explicit node(node* parent, Args&& ...args);
+        explicit node(node *parent, Args &&...args);
 
 
-        virtual ~node() =default;
+        virtual ~node() = default;
     };
 
-    inline bool compare_keys(const tkey& lhs, const tkey& rhs) const;
+    inline bool compare_keys(const tkey &lhs, const tkey &rhs) const;
 
-    inline bool compare_pairs(const value_type & lhs, const value_type & rhs) const;
+    inline bool compare_pairs(const value_type &lhs, const value_type &rhs) const;
 
 public:
 
@@ -57,18 +56,27 @@ public:
     // region iterators definition
 
     class prefix_iterator;
+
     class prefix_const_iterator;
+
     class prefix_reverse_iterator;
+
     class prefix_const_reverse_iterator;
 
     class infix_iterator;
+
     class infix_const_iterator;
+
     class infix_reverse_iterator;
+
     class infix_const_reverse_iterator;
 
     class postfix_iterator;
+
     class postfix_const_iterator;
+
     class postfix_reverse_iterator;
+
     class postfix_const_reverse_iterator;
 
     /** @brief Watch about behavior of reverse iterators.
@@ -82,29 +90,30 @@ public:
      *  *rit == 3
      */
 
+
     class prefix_iterator
     {
         friend binary_search_tree;
     protected:
 
-        node* _data;
+        node *_data;
 
         /** If iterator == end or before_begin _data points to nullptr, _backup to last node
          *
          */
-        node* _backup;
+        node *_backup;
 
     public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit prefix_iterator(node* data = nullptr);
+        explicit prefix_iterator(node *data = nullptr);
 
-        virtual ~prefix_iterator() =default;
+        virtual ~prefix_iterator() = default;
 
         bool operator==(
                 prefix_iterator const &other) const noexcept;
@@ -129,12 +138,14 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
+
+        node *get_node() const;
     };
 
-    class prefix_const_iterator
-    {
+    class prefix_const_iterator {
     protected:
 
         prefix_iterator _base;
@@ -143,15 +154,16 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit prefix_const_iterator(const node* data = nullptr);
+        explicit prefix_const_iterator(const node *data = nullptr);
 
-        explicit prefix_const_iterator(const prefix_iterator&) noexcept;
 
-        virtual ~prefix_const_iterator() =default;
+        explicit prefix_const_iterator(const prefix_iterator &) noexcept;
+
+        virtual ~prefix_const_iterator() = default;
 
         bool operator==(
                 prefix_const_iterator const &other) const noexcept;
@@ -176,6 +188,7 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
@@ -190,18 +203,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit prefix_reverse_iterator(node* data = nullptr);
+        explicit prefix_reverse_iterator(node *data = nullptr);
 
-        prefix_reverse_iterator(const prefix_iterator&) noexcept;
+        prefix_reverse_iterator(const prefix_iterator &) noexcept;
+
         operator prefix_iterator() const noexcept;
 
         prefix_iterator base() const noexcept;
 
-        virtual ~prefix_reverse_iterator() =default;
+        virtual ~prefix_reverse_iterator() = default;
 
         bool operator==(prefix_reverse_iterator const &other) const noexcept;
 
@@ -224,9 +238,11 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
+
 
     class prefix_const_reverse_iterator
     {
@@ -238,18 +254,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit prefix_const_reverse_iterator(const node* data = nullptr);
+        explicit prefix_const_reverse_iterator(const node *data = nullptr);
 
-        prefix_const_reverse_iterator(const prefix_const_iterator&) noexcept;
+        prefix_const_reverse_iterator(const prefix_const_iterator &) noexcept;
 
         operator prefix_const_iterator() const noexcept;
+
         prefix_const_iterator base() const noexcept;
 
-        virtual ~prefix_const_reverse_iterator() =default;
+        virtual ~prefix_const_reverse_iterator() = default;
 
         bool operator==(prefix_const_reverse_iterator const &other) const noexcept;
 
@@ -272,9 +289,11 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
+
 
 
     class infix_iterator
@@ -282,26 +301,27 @@ public:
         friend binary_search_tree;
     protected:
 
-        node* _data;
+        node *_data;
 
         /** If iterator == end or before_begin _data points to nullptr, _backup to last node
          *
          */
-        node* _backup;
+        node *_backup;
 
     public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
+
 
         node* get_data() const { return _data; }
 
         explicit infix_iterator(node* data = nullptr);
 
-        virtual ~infix_iterator() =default;
+        virtual ~infix_iterator() = default;
 
         bool operator==(
                 infix_iterator const &other) const noexcept;
@@ -326,12 +346,14 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
-        node *get_node();
+
+        node *get_node() const;
+
     };
 
-    class infix_const_iterator
-    {
+    class infix_const_iterator {
     protected:
 
         infix_iterator _base;
@@ -340,15 +362,15 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit infix_const_iterator(const node* data = nullptr);
+        explicit infix_const_iterator(const node *data = nullptr);
 
-        infix_const_iterator(const infix_iterator&) noexcept;
+        infix_const_iterator(const infix_iterator &) noexcept;
 
-        virtual ~infix_const_iterator() =default;
+        virtual ~infix_const_iterator() = default;
 
         bool operator==(
                 infix_const_iterator const &other) const noexcept;
@@ -373,12 +395,12 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
 
-    class infix_reverse_iterator
-    {
+    class infix_reverse_iterator {
     protected:
 
         infix_iterator _base;
@@ -387,18 +409,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit infix_reverse_iterator(node* data = nullptr);
+        explicit infix_reverse_iterator(node *data = nullptr);
 
-        infix_reverse_iterator(const infix_iterator&) noexcept;
+        infix_reverse_iterator(const infix_iterator &) noexcept;
+
         operator infix_iterator() const noexcept;
 
         infix_iterator base() const noexcept;
 
-        virtual ~infix_reverse_iterator() =default;
+        virtual ~infix_reverse_iterator() = default;
 
         bool operator==(infix_reverse_iterator const &other) const noexcept;
 
@@ -421,12 +444,12 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
 
-    class infix_const_reverse_iterator
-    {
+    class infix_const_reverse_iterator {
     protected:
 
         infix_const_iterator _base;
@@ -435,18 +458,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit infix_const_reverse_iterator(const node* data = nullptr);
+        explicit infix_const_reverse_iterator(const node *data = nullptr);
 
-        infix_const_reverse_iterator(const infix_const_iterator&) noexcept;
+        infix_const_reverse_iterator(const infix_const_iterator &) noexcept;
 
         operator infix_const_iterator() const noexcept;
+
         infix_const_iterator base() const noexcept;
 
-        virtual ~infix_const_reverse_iterator() =default;
+        virtual ~infix_const_reverse_iterator() = default;
 
         bool operator==(infix_const_reverse_iterator const &other) const noexcept;
 
@@ -469,9 +493,11 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
+
 
 
     class postfix_iterator
@@ -479,24 +505,24 @@ public:
         friend binary_search_tree;
     protected:
 
-        node* _data;
+        node *_data;
 
         /** If iterator == end or before_begin _data points to nullptr, _backup to last node
          *
          */
-        node* _backup;
+        node *_backup;
 
     public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit postfix_iterator(node* data = nullptr);
+        explicit postfix_iterator(node *data = nullptr);
 
-        virtual ~postfix_iterator() =default;
+        virtual ~postfix_iterator() = default;
 
         bool operator==(
                 postfix_iterator const &other) const noexcept;
@@ -521,12 +547,13 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
+        node *get_node() const;
     };
 
-    class postfix_const_iterator
-    {
+    class postfix_const_iterator {
     protected:
 
         postfix_iterator _base;
@@ -535,15 +562,15 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit postfix_const_iterator(const node* data = nullptr);
+        explicit postfix_const_iterator(const node *data = nullptr);
 
-        postfix_const_iterator(const postfix_iterator&) noexcept;
+        postfix_const_iterator(const postfix_iterator &) noexcept;
 
-        virtual ~postfix_const_iterator() =default;
+        virtual ~postfix_const_iterator() = default;
 
         bool operator==(
                 postfix_const_iterator const &other) const noexcept;
@@ -568,12 +595,12 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
 
-    class postfix_reverse_iterator
-    {
+    class postfix_reverse_iterator {
     protected:
 
         postfix_iterator _base;
@@ -582,18 +609,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = value_type&;
-        using pointer = value_type*;
+        using reference = value_type &;
+        using pointer = value_type *;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit postfix_reverse_iterator(node* data = nullptr);
+        explicit postfix_reverse_iterator(node *data = nullptr);
 
-        postfix_reverse_iterator(const postfix_iterator&) noexcept;
+        postfix_reverse_iterator(const postfix_iterator &) noexcept;
+
         operator postfix_iterator() const noexcept;
 
         postfix_iterator base() const noexcept;
 
-        virtual ~postfix_reverse_iterator() =default;
+        virtual ~postfix_reverse_iterator() = default;
 
         bool operator==(postfix_reverse_iterator const &other) const noexcept;
 
@@ -616,12 +644,12 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
 
-    class postfix_const_reverse_iterator
-    {
+    class postfix_const_reverse_iterator {
     protected:
 
         postfix_const_iterator _base;
@@ -630,18 +658,19 @@ public:
 
         using value_type = binary_search_tree<tkey, tvalue, compare>::value_type;
         using difference_type = ptrdiff_t;
-        using reference = const value_type&;
-        using pointer = value_type* const;
+        using reference = const value_type &;
+        using pointer = value_type *const;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        explicit postfix_const_reverse_iterator(const node* data = nullptr);
+        explicit postfix_const_reverse_iterator(const node *data = nullptr);
 
-        postfix_const_reverse_iterator(const postfix_const_iterator&) noexcept;
+        postfix_const_reverse_iterator(const postfix_const_iterator &) noexcept;
 
         operator postfix_const_iterator() const noexcept;
+
         postfix_const_iterator base() const noexcept;
 
-        virtual ~postfix_const_reverse_iterator() =default;
+        virtual ~postfix_const_reverse_iterator() = default;
 
         bool operator==(postfix_const_reverse_iterator const &other) const noexcept;
 
@@ -664,25 +693,34 @@ public:
          */
 
         pointer operator->() noexcept;
+
         size_t depth() const noexcept;
 
     };
 
 
-
     friend class prefix_iterator;
+
     friend class prefix_const_iterator;
+
     friend class prefix_reverse_iterator;
+
     friend class prefix_const_reverse_iterator;
 
     friend class postfix_iterator;
+
     friend class postfix_const_iterator;
+
     friend class postfix_reverse_iterator;
+
     friend class postfix_const_reverse_iterator;
 
     friend class infix_iterator;
+
     friend class infix_const_iterator;
+
     friend class infix_reverse_iterator;
+
     friend class infix_const_reverse_iterator;
 
     // endregion iterators definition
@@ -691,7 +729,7 @@ public:
 protected:
 
     node *_root;
-    logger* _logger;
+    logger *_logger;
     size_t _size;
 
     /** You should use coercion ctor or template methods of allocator
@@ -700,30 +738,31 @@ protected:
 
 public:
     explicit binary_search_tree(
-            const compare& comp = compare(),
+            const compare &comp = compare(),
             pp_allocator<value_type> alloc = pp_allocator<value_type>(),
             logger *log = nullptr);
 
     explicit binary_search_tree(
             pp_allocator<value_type> alloc,
-            const compare& comp = compare(),
+            const compare &comp = compare(),
             logger *log = nullptr);
 
 
     template<input_iterator_for_pair<tkey, tvalue> iterator>
-    explicit binary_search_tree(iterator begin, iterator end, const compare& cmp = compare(),
+
+    explicit binary_search_tree(iterator begin, iterator end, const compare &cmp = compare(),
                                 pp_allocator<value_type> alloc = pp_allocator<value_type>(),
-                                logger* log = nullptr);
+                                logger *log = nullptr);
 
     template<std::ranges::input_range Range>
-    explicit binary_search_tree(Range&& range, const compare& cmp = compare(),
+    explicit binary_search_tree(Range &&range, const compare &cmp = compare(),
                                 pp_allocator<value_type> alloc = pp_allocator<value_type>(),
-                                logger* log = nullptr);
+                                logger *log = nullptr);
 
 
-    binary_search_tree(std::initializer_list<std::pair<tkey, tvalue>> data, const compare& cmp = compare(),
+    binary_search_tree(std::initializer_list<std::pair<tkey, tvalue>> data, const compare &cmp = compare(),
                        pp_allocator<value_type> alloc = pp_allocator<value_type>(),
-                       logger* log = nullptr);
+                       logger *log = nullptr);
 
 public:
 
@@ -739,11 +778,13 @@ public:
 
 public:
 
-    tvalue& at(const tkey& key);
-    const tvalue& at(const tkey& key) const;
+    tvalue &at(const tkey &key);
 
-    tvalue& operator[](const tkey& key);
-    tvalue& operator[](tkey&& key);
+    const tvalue &at(const tkey &key) const;
+
+    tvalue &operator[](const tkey &key);
+
+    tvalue &operator[](tkey &&key);
 
     bool empty() const noexcept;
 
@@ -751,49 +792,56 @@ public:
 
     void clear() noexcept;
 
-    std::pair<infix_iterator, bool> insert(const value_type&);
-    std::pair<infix_iterator, bool> insert(value_type&&);
+    std::pair<infix_iterator, bool> insert(const value_type &);
+
+    std::pair<infix_iterator, bool> insert(value_type &&);
 
     template<std::input_iterator InputIt>
     void insert(InputIt first, InputIt last);
 
     template<std::ranges::input_range R>
-    void insert_range( R&& rg );
+    void insert_range(R &&rg);
 
     template<class ...Args>
-    std::pair<infix_iterator, bool> emplace(Args&&...args);
+    std::pair<infix_iterator, bool> emplace(Args &&...args);
 
-    infix_iterator insert_or_assign(const value_type&);
-    infix_iterator insert_or_assign(value_type&&);
+    infix_iterator insert_or_assign(const value_type &);
 
-    template<std::input_iterator InputIt >
+    infix_iterator insert_or_assign(value_type &&);
+
+    template<std::input_iterator InputIt>
     void insert_or_assign(InputIt first, InputIt last);
 
 
     template<class ...Args>
-    infix_iterator emplace_or_assign(Args&&...args);
+    infix_iterator emplace_or_assign(Args &&...args);
 
-    virtual void swap(binary_search_tree& other) noexcept;
+    virtual void swap(binary_search_tree &other) noexcept;
 
-    bool contains(const tkey& key) const;
+    bool contains(const tkey &key) const;
 
-    infix_iterator find(const tkey&);
-    infix_const_iterator find(const tkey&) const;
+    infix_iterator find(const tkey &);
+
+    infix_const_iterator find(const tkey &) const;
 
 
-    infix_iterator lower_bound(const tkey&);
-    infix_const_iterator lower_bound(const tkey&) const;
+    infix_iterator lower_bound(const tkey &);
 
-    infix_iterator upper_bound(const tkey&);
-    infix_const_iterator upper_bound(const tkey&) const;
+    infix_const_iterator lower_bound(const tkey &) const;
+
+    infix_iterator upper_bound(const tkey &);
+
+    infix_const_iterator upper_bound(const tkey &) const;
 
     infix_iterator erase(infix_iterator pos);
+
     infix_iterator erase(infix_const_iterator pos);
 
     infix_iterator erase(infix_iterator first, infix_iterator last);
+
     infix_iterator erase(infix_const_iterator first, infix_const_iterator last);
 
-    size_t erase(const tkey& key);
+    size_t erase(const tkey &key);
 
 public:
 
@@ -936,28 +984,43 @@ protected:
 };
 
 
+template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
+binary_search_tree<tkey, tvalue, compare, tag>::node *
+binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator::get_node() const {
+    return _data;
+}
+
+template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
+binary_search_tree<tkey, tvalue, compare, tag>::node *
+binary_search_tree<tkey, tvalue, compare, tag>::postfix_iterator::get_node() const {
+    return _data;
+}
 
 
-namespace __detail
-{
+namespace __detail {
     template<typename tkey, typename tvalue, typename compare, typename tag>
-    class bst_impl
-    {
+    class bst_impl {
     public:
         template<class ...Args>
-        static binary_search_tree<tkey, tvalue, compare, tag>::node* create_node(binary_search_tree<tkey, tvalue, compare, tag>& cont, Args&& ...args);
+        static binary_search_tree<tkey, tvalue, compare, tag>::node *
+        create_node(binary_search_tree<tkey, tvalue, compare, tag> &cont, Args &&...args);
 
-        static void delete_node(binary_search_tree<tkey, tvalue, compare, tag>& cont, binary_search_tree<tkey, tvalue, compare, tag>::node* n);
+
+        static void delete_node(binary_search_tree<tkey, tvalue, compare, tag> &cont,
+                                binary_search_tree<tkey, tvalue, compare, tag>::node *n);
 
         //Does not invalidate node*, needed for splay tree
-        static void post_search(binary_search_tree<tkey, tvalue, compare, tag>::node**){}
+        static void post_search(binary_search_tree<tkey, tvalue, compare, tag>::node **) {}
 
         //Does not invalidate node*
-        static void post_insert(binary_search_tree<tkey, tvalue, compare, tag>& cont, binary_search_tree<tkey, tvalue, compare, tag>::node**){}
+        static void post_insert(binary_search_tree<tkey, tvalue, compare, tag> &cont,
+                                binary_search_tree<tkey, tvalue, compare, tag>::node **) {}
 
-        static void erase(binary_search_tree<tkey, tvalue, compare, tag>& cont, binary_search_tree<tkey, tvalue, compare, tag>::node**);
+        static void erase(binary_search_tree<tkey, tvalue, compare, tag> &cont,
+                          binary_search_tree<tkey, tvalue, compare, tag>::node **);
 
-        static void swap(binary_search_tree<tkey, tvalue, compare, tag>& lhs, binary_search_tree<tkey, tvalue, compare, tag>& rhs) noexcept;
+        static void swap(binary_search_tree<tkey, tvalue, compare, tag> &lhs,
+                         binary_search_tree<tkey, tvalue, compare, tag> &rhs) noexcept;
     };
 }
 
@@ -1067,7 +1130,8 @@ binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator::operator--() & 
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator const
-binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator::operator--(int not_used)  noexcept {
+binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator::operator--(int not_used) noexcept {
+
     auto Copy = *this;
     --(*this);
     return Copy;
@@ -1104,8 +1168,7 @@ size_t binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator::depth() 
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_iterator::prefix_const_iterator(const node *data) : _base(
-        data) {
-
+        const_cast<node *>(data)) {
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -1117,7 +1180,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_iterator::prefix_co
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 bool binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_iterator::operator==(
         const binary_search_tree::prefix_const_iterator &other) const noexcept {
-    return _base == other;
+    return _base == other._base;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -1190,7 +1253,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::prefix_reverse_iterator::prefix_
 }
 
 
-template<typename tkey, typename tvalue, compator <tkey> compare, typename tag>
+template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag>::prefix_reverse_iterator::operator binary_search_tree<tkey, tvalue, compare, tag>::prefix_iterator() const noexcept {
     return std::prev(_base);
 }
@@ -1351,9 +1414,10 @@ size_t binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_reverse_iter
 // endregion prefix_const_reverse_iterator implementation
 
 //region infix_iterator implementation
+
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag>::node *
-binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::get_node() {
+binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::get_node() const {
     return _data;
 }
 
@@ -1371,6 +1435,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator::operator==(infix
     } else {
         return _backup == other._backup;
     }
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2040,7 +2105,6 @@ size_t binary_search_tree<tkey, tvalue, compare, tag>::postfix_const_reverse_ite
 
 // region binary_search_tree methods_access implementation
 
-
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag>::node *
 binary_search_tree<tkey, tvalue, compare, tag>::go_to_node_with_key(const tkey &key) {
@@ -2122,6 +2186,7 @@ typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::find(const tkey &key) {
     node *n = go_to_node_with_key(key);
     infix_iterator it(n);
+    post_search(&n);
     return it;
 }
 
@@ -2130,6 +2195,7 @@ typename binary_search_tree<tkey, tvalue, compare, tag>::infix_const_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::find(const tkey &key) const {
     node *n = go_to_node_with_key(key);
     infix_const_iterator it(n);
+    post_search(&n);
     return it;
 }
 
@@ -2139,7 +2205,8 @@ binary_search_tree<tkey, tvalue, compare, tag>::lower_bound(const tkey &key) {
     node *current = _root;
     while (current != nullptr) {
         if (compare_keys(key, current->data.first)) {
-            if (current->left_subtree != nullptr && compare_keys(key, current->left_subtree->data.first)) {
+            if (compare_keys(key, current->left_subtree->data.first)) {
+
                 current = current->left_subtree;
             } else {
                 break;
@@ -2151,7 +2218,8 @@ binary_search_tree<tkey, tvalue, compare, tag>::lower_bound(const tkey &key) {
     if (current == nullptr) {
         return end_infix();
     }
-    infix_iterator it(current);
+    infix_iterator it(current->left_subtree);
+
     return it;
 }
 
@@ -2181,146 +2249,53 @@ template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) {
     node *current = _root;
+    node* prev = nullptr;
+    node* prev_prev = nullptr;
     while (current != nullptr) {
+        prev_prev = prev;
+        prev = current;
         if (compare_keys(key, current->data.first)) {
             current = current->left_subtree;
         } else {
-            if (current->right_subtree != nullptr && compare_keys(current->left_subtree->data.first, key)) {
-                current = current->right_subtree;
-            } else {
-                break;
-            }
+            current = current->right_subtree;
         }
     }
-    if (current == nullptr) {
-        return end_infix();
+
+    //»скомое значение находитс€ где-то между prev_prev и prev
+    auto mx = prev->data.first > prev_prev->data.first ? prev : prev_prev;
+    auto mn = prev->data.first < prev_prev->data.first ? prev : prev_prev;
+    if (compare_keys(key, mn->data.first)){
+        return infix_iterator(mn);
+    } else {
+        return infix_iterator(mx);
     }
-    infix_iterator it(current);
-    return it;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_const_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) const {
     node *current = _root;
+    node* prev;
     while (current != nullptr) {
+        prev = current;
         if (compare_keys(key, current->data.first)) {
             current = current->left_subtree;
         } else {
-            if (current->right_subtree != nullptr && compare_keys(current->left_subtree->data.first, key)) {
-                current = current->right_subtree;
-            } else {
-                break;
-            }
+            current = current->right_subtree;
         }
     }
-    if (current == nullptr) {
-        return end_infix();
-    }
-    infix_const_iterator it(current);
+    infix_iterator it(prev);
+
     return it;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_iterator pos) {
-    node *node_to_delete = pos.get_node();
-    if (node_to_delete == nullptr) {
-        throw std::out_of_range("Incorrect iterator for erase\n");
-    }
-
-    infix_iterator next_node = std::next(pos);
-    //node* prev = (std::prev(pos)).get_node();
-    node *parent = node_to_delete->parent;
-    node *new_node = nullptr;
-    if ((node_to_delete->left_subtree == nullptr) && (node_to_delete->right_subtree == nullptr)) {
-        if (parent->left_subtree == node_to_delete) {
-            parent->left_subtree = nullptr;
-        } else {
-            parent->right_subtree = nullptr;
-        }
-    } else if (node_to_delete->left_subtree != nullptr && node_to_delete->right_subtree == nullptr) {
-        new_node = node_to_delete->left_subtree;
-        if (parent->left_subtree == node_to_delete) {
-            parent->left_subtree = new_node;
-            new_node->parent = node_to_delete->parent;
-        } else {
-            parent->right_subtree = new_node;
-            new_node->parent = node_to_delete->parent;
-        }
-    } else if (node_to_delete->left_subtree == nullptr && node_to_delete->right_subtree != nullptr) {
-        new_node = node_to_delete->right_subtree;
-        if (parent != nullptr) {
-            if (parent->left_subtree == node_to_delete) {
-                parent->left_subtree = new_node;
-            } else {
-                parent->right_subtree = new_node;
-            }
-        } else {
-            _root = new_node;
-        }
-        new_node->parent = node_to_delete->parent;
-    } else {
-        node *successor;
-
-        successor = node_to_delete->left_subtree;
-        while (successor->right_subtree) {
-            successor = successor->right_subtree;
-        }
-
-        new_node = successor;
-        if (node_to_delete->parent != nullptr) {
-            if (node_to_delete->parent->right_subtree == node_to_delete) {
-                node_to_delete->parent->right_subtree = new_node;
-            } else {
-                node_to_delete->parent->left_subtree = new_node;
-            }
-        }
-
-        if (new_node->parent != nullptr) {
-            if (new_node->parent->right_subtree == new_node) {
-                new_node->parent->right_subtree = new_node->left_subtree;
-            } else {
-                node_to_delete->parent->left_subtree = new_node->left_subtree;
-            }
-        }
-
-        ////ќбработка случа€, когда новый узел €вл€етс€ ребенком удал€емого.
-        ////¬ силу алгоритма в таком случае новый узел будет левым поддеревом удал€емого и не будет иметь правого поддерева.
-        if (new_node->parent == node_to_delete) {
-            new_node->right_subtree = node_to_delete->right_subtree;
-        } else {
-            new_node->left_subtree = node_to_delete->left_subtree;
-            new_node->right_subtree = node_to_delete->right_subtree;
-        }
-
-
-        new_node->parent = node_to_delete->parent;
-
-        if (new_node->left_subtree) {
-            new_node->left_subtree->parent = new_node;
-        }
-        if (new_node->right_subtree) {
-            new_node->right_subtree->parent = new_node;
-        }
-    }
-
-    if (node_to_delete->parent == nullptr) {
-        _root = new_node;
-    }
-    _size--;
-    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &node_to_delete);
-    __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(*this, node_to_delete);
-
-
-    if (next_node.get_node() != nullptr) {
-        if (std::prev(next_node).get_node() != nullptr) {
-            next_node--;
-        }
-    }
-
-    return next_node;
-
+    node *n = pos.get_node();
+    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &n);
+    infix_iterator it(n);
+    return it;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2351,8 +2326,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::erase(infix_const_iterator first
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 size_t binary_search_tree<tkey, tvalue, compare, tag>::erase(const tkey &key) {
     node *n = go_to_node_with_key(key);
-    infix_iterator it(n);
-    erase(it);
+    __detail::bst_impl<tkey, tvalue, compare, tag>::erase(*this, &n);
     return size();
 }
 
@@ -2813,18 +2787,22 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_left_rotation(node *&
 
     if (subtree_root->right_subtree == nullptr) {
         return;
-        //если правого поддерева нет, поворот выполнить невозможно
     }
 
 
     node *a = subtree_root;
-    node *b = subtree_root->left_subtree;
-    node *c = subtree_root->right_subtree;
-    node *d = subtree_root->right_subtree->left_subtree;
-    node *e = subtree_root->right_subtree->right_subtree;
+    node *b = a->left_subtree;
+    node *c = a->right_subtree;
+    node *d = c->left_subtree;
+    node *e = c->right_subtree;
 
-    subtree_root = subtree_root->right_subtree;
-
+    if (a->parent){
+        if (a == a->parent->left_subtree){
+            a->parent->left_subtree = c;
+        } else {
+            a->parent->right_subtree = c;
+        }
+    }
 
     c->left_subtree = a;
     c->parent = a->parent;
@@ -2845,6 +2823,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_left_rotation(node *&
     if (d != nullptr) {
         d->parent = a;
     }
+    subtree_root = c;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2857,18 +2836,24 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_right_rotation(node *
     }
 
     if (subtree_root->left_subtree == nullptr) {
-        //если левого поддерева нет, поворот выполнить невозможно
         return;
     }
 
 
     node *a = subtree_root;
-    node *b = subtree_root->left_subtree;
-    node *c = subtree_root->right_subtree;
+
+    node *b = a->left_subtree;
+    node *c = a->right_subtree;
     node *d = b->left_subtree;
     node *e = b->right_subtree;
 
-    subtree_root = subtree_root->left_subtree;
+    if (a->parent){
+        if (a == a->parent->left_subtree){
+            a->parent->left_subtree = b;
+        } else {
+            a->parent->right_subtree = b;
+        }
+    }
 
     b->left_subtree = d;
     b->parent = a->parent;
@@ -2889,6 +2874,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::small_right_rotation(node *
     if (c != nullptr) {
         c->parent = a;
     }
+    subtree_root = b;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2915,7 +2901,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::double_left_rotation(node *
         return;
     }
 
-    small_left_rotation(subtree_root->right_subtree);
+    small_left_rotation(subtree_root);
     small_left_rotation(subtree_root);
 }
 
@@ -2925,7 +2911,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::double_right_rotation(node 
         return;
     }
 
-    small_right_rotation(subtree_root->left_subtree);
+    small_right_rotation(subtree_root);
     small_right_rotation(subtree_root);
 }
 
@@ -2937,7 +2923,7 @@ namespace __detail {
     typename binary_search_tree<tkey, tvalue, compare, tag>::node *
     bst_impl<tkey, tvalue, compare, tag>::create_node(binary_search_tree<tkey, tvalue, compare, tag> &cont,
                                                       Args &&...args) {
-        typename binary_search_tree<tkey, tvalue, compare, tag>::node *n = cont._allocator.new_object<typename binary_search_tree<tkey, tvalue, compare, tag>::node>(
+        typename binary_search_tree<tkey, tvalue, compare, tag>::node *n = cont._allocator.template new_object<typename binary_search_tree<tkey, tvalue, compare, tag>::node>(
                 args ...);
         return n;
     }
@@ -2952,6 +2938,93 @@ namespace __detail {
     void bst_impl<tkey, tvalue, compare, tag>::erase(binary_search_tree<tkey, tvalue, compare, tag> &cont,
                                                      typename binary_search_tree<tkey, tvalue, compare, tag>::node **node_ptr) {
 
+        auto *node_to_delete = *node_ptr;
+        if (node_to_delete == nullptr) {
+            throw std::out_of_range("Incorrect iterator for erase\n");
+        }
+
+        //node* prev = (std::prev(pos)).get_node();
+        auto *parent = node_to_delete->parent;
+        typename binary_search_tree<tkey, tvalue, compare, tag>::node *new_node = nullptr;
+        if ((node_to_delete->left_subtree == nullptr) && (node_to_delete->right_subtree == nullptr)) {
+            if (parent->left_subtree == node_to_delete) {
+                parent->left_subtree = nullptr;
+            } else {
+                parent->right_subtree = nullptr;
+            }
+        } else if (node_to_delete->left_subtree != nullptr && node_to_delete->right_subtree == nullptr) {
+            new_node = node_to_delete->left_subtree;
+            if (parent->left_subtree == node_to_delete) {
+                parent->left_subtree = new_node;
+                new_node->parent = node_to_delete->parent;
+            } else {
+                parent->right_subtree = new_node;
+                new_node->parent = node_to_delete->parent;
+            }
+        } else if (node_to_delete->left_subtree == nullptr && node_to_delete->right_subtree != nullptr) {
+            new_node = node_to_delete->right_subtree;
+            if (parent != nullptr) {
+                if (parent->left_subtree == node_to_delete) {
+                    parent->left_subtree = new_node;
+                } else {
+                    parent->right_subtree = new_node;
+                }
+            } else {
+                cont._root = new_node;
+            }
+            new_node->parent = node_to_delete->parent;
+        } else {
+            typename binary_search_tree<tkey, tvalue, compare, tag>::node *successor;
+
+            successor = node_to_delete->left_subtree;
+            while (successor->right_subtree) {
+                successor = successor->right_subtree;
+            }
+
+            new_node = successor;
+            if (node_to_delete->parent != nullptr) {
+                if (node_to_delete->parent->right_subtree == node_to_delete) {
+                    node_to_delete->parent->right_subtree = new_node;
+                } else {
+                    node_to_delete->parent->left_subtree = new_node;
+                }
+            }
+
+            if (new_node->parent != nullptr) {
+                if (new_node->parent->right_subtree == new_node) {
+                    new_node->parent->right_subtree = new_node->left_subtree;
+                } else {
+                    node_to_delete->parent->left_subtree = new_node->left_subtree;
+                }
+            }
+
+            //Managing case when new_node is child f node_to_delete
+            if (new_node->parent == node_to_delete) {
+                new_node->right_subtree = node_to_delete->right_subtree;
+            } else {
+                new_node->left_subtree = node_to_delete->left_subtree;
+                new_node->right_subtree = node_to_delete->right_subtree;
+            }
+
+
+            new_node->parent = node_to_delete->parent;
+
+            if (new_node->left_subtree) {
+                new_node->left_subtree->parent = new_node;
+            }
+            if (new_node->right_subtree) {
+                new_node->right_subtree->parent = new_node;
+            }
+        }
+
+        if (node_to_delete->parent == nullptr) {
+            cont._root = new_node;
+        }
+        cont._size--;
+        __detail::bst_impl<tkey, tvalue, compare, tag>::delete_node(cont, node_to_delete);
+
+
+        *node_ptr = new_node;
     }
 }
 
@@ -2964,6 +3037,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::binary_search_tree(const binary_
     while (iter_other != other.end_prefix()) {
         insert(*iter_other);
         iter_other++;
+
     }
 
     *_logger = *other._logger;
@@ -3001,6 +3075,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::operator=(const binary_search_tr
     _allocator = other._allocator;
     return *this;
 }
+
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 binary_search_tree<tkey, tvalue, compare, tag> &
@@ -3054,7 +3129,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::get_next_prefix(node *n) {
         node *tmp = parent;
         node *prev = n;
         bool from_left = false;
-        while (tmp->parent) {
+        while (tmp) {
             //if node doesnt have right_subtree, then traversal for it is finished and we need to go upper
             if (tmp->left_subtree == prev && tmp->right_subtree != nullptr) {
                 from_left = true;
@@ -3149,7 +3224,8 @@ binary_search_tree<tkey, tvalue, compare, tag>::get_next_infix(node *n) {
     if (n->right_subtree == nullptr && n == n->parent->left_subtree) {
         return parent;
     }
-    if (n->right_subtree != nullptr){
+
+    if (n->right_subtree != nullptr) {
         node *tmp = n->right_subtree;
         while (tmp->left_subtree) {
             tmp = tmp->left_subtree;
@@ -3302,7 +3378,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::insert(const value_type &value) 
     if (new_node == nullptr) {
         return std::pair<infix_iterator, bool>(itt, false);
     }
-    if (prev == nullptr){
+    if (prev == nullptr) {
         _root = new_node;
         __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
         return std::pair<infix_iterator, bool>(itt, true);
@@ -3341,6 +3417,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::insert(value_type &&value) {
     if (new_node == nullptr) {
         return std::pair<infix_iterator, bool>(itt, false);
     }
+
     if (prev == nullptr){
         _root = new_node;
         __detail::bst_impl<tkey, tvalue, compare, tag>::post_insert(*this, &new_node);
@@ -3381,7 +3458,7 @@ template<class ...Args>
 std::pair<typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator, bool>
 binary_search_tree<tkey, tvalue, compare, tag>::emplace(Args &&... args) {
     value_type n(args ...);
-    return insert(std::move(n));
+    return this->insert(std::move(n));
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
