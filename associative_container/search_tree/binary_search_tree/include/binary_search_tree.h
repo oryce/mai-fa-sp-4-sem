@@ -1180,7 +1180,7 @@ binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_iterator::prefix_co
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 bool binary_search_tree<tkey, tvalue, compare, tag>::prefix_const_iterator::operator==(
         const binary_search_tree::prefix_const_iterator &other) const noexcept {
-    return _base == other;
+    return _base == other._base;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
@@ -2186,6 +2186,7 @@ typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::find(const tkey &key) {
     node *n = go_to_node_with_key(key);
     infix_iterator it(n);
+    post_search(&n);
     return it;
 }
 
@@ -2194,6 +2195,7 @@ typename binary_search_tree<tkey, tvalue, compare, tag>::infix_const_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::find(const tkey &key) const {
     node *n = go_to_node_with_key(key);
     infix_const_iterator it(n);
+    post_search(&n);
     return it;
 }
 
@@ -2247,44 +2249,43 @@ template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) {
     node *current = _root;
+    node* prev = nullptr;
+    node* prev_prev = nullptr;
     while (current != nullptr) {
+        prev_prev = prev;
+        prev = current;
         if (compare_keys(key, current->data.first)) {
             current = current->left_subtree;
         } else {
-            if (current->right_subtree != nullptr && compare_keys(current->right_subtree->data.first, key)) {
-                current = current->right_subtree;
-            } else {
-                break;
-            }
+            current = current->right_subtree;
         }
     }
-    if (current == nullptr) {
-        return end_infix();
-    }
-    infix_iterator it(current->right_subtree);
 
-    return it;
+    //Искомое значение находится где-то между prev_prev и prev
+    auto mx = prev->data.first > prev_prev->data.first ? prev : prev_prev;
+    auto mn = prev->data.first < prev_prev->data.first ? prev : prev_prev;
+    if (compare_keys(key, mn->data.first)){
+        return infix_iterator(mn);
+    } else {
+        return infix_iterator(mx);
+    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, typename tag>
 typename binary_search_tree<tkey, tvalue, compare, tag>::infix_const_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::upper_bound(const tkey &key) const {
     node *current = _root;
+    node* prev;
     while (current != nullptr) {
+        prev = current;
         if (compare_keys(key, current->data.first)) {
             current = current->left_subtree;
         } else {
-            if (current->right_subtree != nullptr && compare_keys(current->left_subtree->data.first, key)) {
-                current = current->right_subtree;
-            } else {
-                break;
-            }
+            current = current->right_subtree;
         }
     }
-    if (current == nullptr) {
-        return end_infix();
-    }
-    infix_const_iterator it(current);
+    infix_iterator it(prev);
+
     return it;
 }
 
@@ -2900,7 +2901,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::double_left_rotation(node *
         return;
     }
 
-    small_left_rotation(subtree_root->right_subtree);
+    small_left_rotation(subtree_root);
     small_left_rotation(subtree_root);
 }
 
@@ -2910,7 +2911,7 @@ void binary_search_tree<tkey, tvalue, compare, tag>::double_right_rotation(node 
         return;
     }
 
-    small_right_rotation(subtree_root->left_subtree);
+    small_right_rotation(subtree_root);
     small_right_rotation(subtree_root);
 }
 
