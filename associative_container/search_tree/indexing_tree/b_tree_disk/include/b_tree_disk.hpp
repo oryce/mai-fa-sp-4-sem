@@ -14,6 +14,7 @@
 #include <optional>
 #include <cstddef>
 #include <filesystem>
+#include <logger_guardant.h>
 
 template<typename compare, typename tkey>
 concept compator = requires(const compare c, const tkey& lhs, const tkey& rhs)
@@ -75,7 +76,7 @@ private:
 
     friend btree_disk_node;
 
-    //logger* _logger;
+    logger* _logger;
 
     std::fstream _file_for_tree;
 
@@ -102,7 +103,7 @@ public:
 
     // region constructors declaration
 
-    explicit B_tree_disk(const std::string& file_path, const compare& cmp = compare(), void* logger = nullptr);
+    explicit B_tree_disk(const std::string& file_path, const compare& cmp = compare(), logger* logger = nullptr);
 
 
     // endregion constructors declaration
@@ -254,14 +255,129 @@ bool B_tree_disk<tkey, tvalue, compare, t>::update(const B_tree_disk::tree_data_
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 bool B_tree_disk<tkey, tvalue, compare, t>::insert(const B_tree_disk::tree_data_type &data)
 {
+    size_t prev_i;
+    btree_disk_node *prev = nullptr;
+    btree_disk_node *prev_parent = nullptr;
+    auto cur_pointer = _root;
+    std::stack<std::pair<btree_node*, size_t>> st = std::stack<std::pair<btree_node*, size_t>>();
 
+    if (_root == nullptr){
+        _root = _allocator.template new_object<B_tree::btree_node>();
+        _root->_keys.insert(_root->_keys.begin(), data);
+        _root->_pointers.insert(_root->_pointers.begin(), nullptr);
+        prev_i = 0;
+    } else {
+        auto cur_key = _root->_keys[0].first;
+        size_t i = 0;
+        prev_i = 0;
+        while(cur_pointer != nullptr){
+
+            i = 0;
+            prev_i = 0;
+            cur_key = cur_pointer->_keys[prev_i].first;
+            for(; i < cur_pointer->_keys.size() && compare_keys(cur_pointer->_keys[i].first, data.first); prev_i = i++){
+
+            }
+
+            cur_key = cur_pointer->_keys[prev_i].first;
+
+            if (cur_key == data.first){
+                return std::pair<B_tree<tkey, tvalue, compare, t>::btree_iterator, bool>(end(), false);
+            }
+            prev_parent = prev;
+            prev = cur_pointer;
+
+
+            if (i < cur_pointer->_pointers.size()){
+                cur_pointer = cur_pointer->_pointers[i];
+            } else {
+                cur_pointer = nullptr;
+            }
+            if (cur_pointer != nullptr){
+                st.push(std::move(std::pair<btree_node*, size_t>(prev, 0))); //fix
+            }
+        }
+        if (prev->_keys.size() == maximum_keys_in_node){
+            prev->_keys.insert(prev->_keys.begin() + i, data);
+            prev->_pointers.insert(prev->_pointers.begin() + i, nullptr);
+            auto pair = split(prev, prev_parent);
+        } else {
+            prev->_keys.insert(prev->_keys.begin() + i, data);
+            prev->_pointers.insert(prev->_pointers.begin() + i, nullptr);
+        }
+    }
+    _size++;
+    return std::pair<B_tree<tkey, tvalue, compare, t>::btree_iterator, bool>(B_tree<tkey, tvalue, compare, t>::btree_iterator(st, prev_i), true);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size_t, size_t>>& path)
 {
+    if (path.empty()){
+        return;
+    }
+    size_t node_to_split_position = path.top().first;
+    path.pop();
+    size_t parent_node_position = path.empty() ? SIZE_MAX : path.top().first;
 
+    auto node_to_split = disk_read(node_to_split_position);
+    auto parent_node = parent_node_position  == SIZE_MAX ? nullptr : disk_read(parent_node_position);
 
+    auto root = disk_read(_position_root);
+
+    size_t middle_ind = (maximum_keys_in_node+1) / 2;
+    tkey middle_key = node_to_split->_keys[middle_ind].first;
+    tvalue middle_value = node_to_split->_keys[middle_ind].second;
+    size_t middle_index;
+    if (parent_node == nullptr) {
+        //если сплитим корень, то нужно создать новый
+        root = btree_disk_node(false);
+        root.position_in_disk = _count_of_node++;
+        parent_node = root;
+        middle_index = 0;
+    } else {
+        size_t i;
+        for(i = 0; i < parent_node->_keys.size(); i++){
+            if (!compare_keys(parent_node->_keys[i].first, middle_key)){
+                break;
+            }
+        }
+        middle_index = i;
+    }
+    btree_disk_node left_part = btree_disk_node();
+    btree_disk_node right_part = btree_disk_node();
+//    if (left_part == nullptr || right_part == nullptr){
+//        if (left_part != nullptr){
+//            _allocator.template delete_object<B_tree::btree_node>(left_part);
+//        }
+//        if (right_part != nullptr){
+//            _allocator.template delete_object<B_tree::btree_node>(right_part);
+//        }
+//        return std::pair(nullptr, nullptr);
+//    }
+
+    const auto it_keys_begin = node_to_split.keys.begin();
+    const auto it_keys_end = node_to_split.keys.end();
+    const auto it_point_begin = node_to_split.pointers.begin();
+    const auto it_point_end = node_to_split.pointers.end();
+
+    left_part.keys.insert(left_part.keys.begin(), it_keys_begin, it_keys_begin + middle_ind);
+    left_part.pointers.insert(left_part.pointers.begin(), it_point_begin, it_point_begin + middle_ind);
+
+    right_part.keys.insert(right_part.keys.begin(), it_keys_begin + middle_ind + 1, it_keys_end);
+    right_part.pointers.insert(right_part.pointers.begin(), it_point_begin + middle_ind + 1, it_point_end);
+
+    parent_node.keys.insert(parent_node.keys.begin() + middle_index, node_to_split.keys[middle_ind]);
+    parent_node.pointers.insert(parent_node.pointers.begin() + middle_index, left_part);
+    parent_node.pointers.insert(parent_node.pointers.begin() + middle_index + 1, right_part);
+
+    left_part.position_in_disk = _count_of_node++;
+    left_part.position_in_disk = _count_of_node++;
+
+    disk_write(left_part);
+    disk_write(right_part);
+    disk_write(parent_node);
+    disk_write(root);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -293,7 +409,8 @@ void B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::serialize(std::fstr
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 void B_tree_disk<tkey, tvalue, compare, t>::disk_write(btree_disk_node& node)
 {
-
+    _file_for_tree.seekg(node.position_in_disk);
+    _file_for_tree.write(node, sizeof(B_tree_disk::btree_disk_node));
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -305,7 +422,10 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node B_tree_disk<tkey
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node B_tree_disk<tkey, tvalue, compare, t>::disk_read(size_t node_position)
 {
-
+    _file_for_tree.seekg(node_position);
+    B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node out;
+    _file_for_tree.read(&out, sizeof(B_tree_disk::btree_disk_node));
+    return std::move(out);
 }
 
 
@@ -325,20 +445,23 @@ template<serializable tkey, serializable tvalue, compator<tkey> compare, std::si
 bool B_tree_disk<tkey, tvalue, compare, t>::compare_pairs(const B_tree_disk::tree_data_type &lhs,
                                                           const B_tree_disk::tree_data_type &rhs) const
 {
+    return compare_keys(lhs.first, rhs.first);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 bool B_tree_disk<tkey, tvalue, compare, t>::compare_keys(const tkey &lhs, const tkey &rhs) const
 {
+    return compare(lhs, rhs);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 size_t B_tree_disk<tkey, tvalue, compare, t>::_count_of_node = 0;
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
-B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path, const compare& cmp, void* logger):  compare(cmp)
+B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path, const compare& cmp, logger* logger):  compare(cmp)
 {
-
+    _file_for_tree = std::fstream (file_path);
+    _logger = logger;
 }
 
 
