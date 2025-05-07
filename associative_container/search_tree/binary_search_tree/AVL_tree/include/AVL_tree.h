@@ -598,14 +598,14 @@ namespace __detail {
                 args ...);
         n->left_subtree = nullptr;
         n->right_subtree = nullptr;
-        return dynamic_cast<binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *>(n);
+        return static_cast<binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *>(n);
     }
 
     template<typename tkey, typename tvalue, typename compare>
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::delete_node(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
             binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *n) {
-        auto *avl_node = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(n);
+        auto *avl_node = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(n);
         cont._allocator.delete_object(n);
     }
 
@@ -616,12 +616,12 @@ namespace __detail {
 
         typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *cur = *node;
         while (cur != nullptr) {
-            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
+            static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
             cur = AVL_tree<tkey, tvalue, compare>::rebalance(cur);
             if (cur == nullptr) {
                 break;
             }
-            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
+            static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
             if (cur->parent == nullptr) {
                 cont._root = cur;
             }
@@ -640,7 +640,7 @@ namespace __detail {
     void bst_impl<tkey, tvalue, compare, AVL_TAG>::erase(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont,
             typename binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node **node) {
-        auto &avl_tree = dynamic_cast<AVL_tree<tkey, tvalue, compare> &>(cont);
+        auto &avl_tree = static_cast<AVL_tree<tkey, tvalue, compare> &>(cont);
         auto *node_to_delete = *node;
         if (node_to_delete == nullptr) {
             throw std::out_of_range("Incorrect iterator for erase\n");
@@ -673,7 +673,7 @@ namespace __detail {
                     new_node->parent->left_subtree = new_node->right_subtree;
                 }
             }
-            dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(new_node)->recalculate_height();
+            static_cast<AVL_tree<tkey, tvalue, compare>::node *>(new_node)->recalculate_height();
 
 
             if (node_to_delete->parent != nullptr) {
@@ -721,8 +721,8 @@ namespace __detail {
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 void AVL_tree<tkey, tvalue, compare>::node::recalculate_height() noexcept {
-    auto *left = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
-    auto *right = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
+    auto *left = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
+    auto *right = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
     int left_height = (left ? left->height : 0);
     int right_height = (right ? right->height : 0);
     this->height = 1 + std::max(left_height, right_height);
@@ -730,8 +730,8 @@ void AVL_tree<tkey, tvalue, compare>::node::recalculate_height() noexcept {
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 short AVL_tree<tkey, tvalue, compare>::node::get_balance() const noexcept {
-    auto left = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
-    auto right = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
+    auto left = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->left_subtree);
+    auto right = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(this->right_subtree);
     short left_height = (left ? left->height : 0);
     short right_height = (right ? right->height : 0);
     return right_height - left_height;
@@ -765,13 +765,13 @@ AVL_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_iterator.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_iterator.get_node())->get_balance();
 }
 
 // endregion prefix_iterator implementation
@@ -798,13 +798,13 @@ AVL_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(pr
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_const_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_const_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_iterator::_base.get_node())->get_balance();
 }
 
 // endregion prefix_const_iterator implementation
@@ -824,13 +824,13 @@ AVL_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterato
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -867,13 +867,13 @@ AVL_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_rev
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::prefix_const_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -907,13 +907,13 @@ AVL_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::infix_it
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_iterator::get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_iterator::get_node())->get_balance();
 }
 
 // endregion infix_iterator implementation
@@ -934,13 +934,13 @@ AVL_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(pare
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_const_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_const_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -967,13 +967,13 @@ AVL_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1011,13 +1011,13 @@ AVL_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_rever
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::infix_const_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1055,13 +1055,13 @@ AVL_tree<tkey, tvalue, compare>::postfix_iterator::postfix_iterator(parent::post
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_iterator.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_iterator.get_node())->get_balance();
 }
 
 // endregion postfix_iterator implementation
@@ -1082,13 +1082,13 @@ AVL_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_const_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_const_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1115,13 +1115,13 @@ AVL_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_itera
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1159,13 +1159,13 @@ AVL_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_r
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::get_height() const noexcept {
-    auto *n = dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_reverse_iterator::_base.get_node());
+    auto *n = static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_reverse_iterator::_base.get_node());
     return n->height;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 size_t AVL_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::get_balance() const noexcept {
-    return dynamic_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_reverse_iterator::_base.get_node())->get_balance();
+    return static_cast<AVL_tree<tkey, tvalue, compare>::node *>(parent::postfix_const_reverse_iterator::_base.get_node())->get_balance();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1560,14 +1560,14 @@ void AVL_tree<tkey, tvalue, compare>::swap(parent &other) noexcept {
 template<typename tkey, typename tvalue, compator<tkey> compare>
 binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::node *
 AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *to_balance) {
-    auto *n = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(to_balance);
-    auto *left = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->left_subtree);
-    auto *right = dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->right_subtree);
+    auto *n = static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(to_balance);
+    auto *left = static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->left_subtree);
+    auto *right = static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->right_subtree);
     if (n->get_balance() == 2) {
         auto hl = right->left_subtree
-                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->left_subtree)->height : 0;
+                  ? static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->left_subtree)->height : 0;
         auto hr = right->right_subtree
-                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->right_subtree)->height : 0;
+                  ? static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(right->right_subtree)->height : 0;
         if (hl <= hr) {
             binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::small_left_rotation(to_balance);
         } else {
@@ -1575,9 +1575,9 @@ AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *to_balance) {
         }
     } else if (n->get_balance() == -2) {
         auto hl = left->left_subtree
-                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->left_subtree)->height : 0;
+                  ? static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->left_subtree)->height : 0;
         auto hr = left->right_subtree
-                  ? dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->right_subtree)->height : 0;
+                  ? static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(left->right_subtree)->height : 0;
         if (hr <= hl) {
             binary_search_tree<tkey, tvalue, compare, __detail::AVL_TAG>::small_right_rotation(to_balance);
         } else {
@@ -1587,10 +1587,10 @@ AVL_tree<tkey, tvalue, compare>::rebalance(parent::node *to_balance) {
     n->recalculate_height();
     if (n->parent) {
         if (n->parent->left_subtree) {
-            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->left_subtree)->recalculate_height();
+            static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->left_subtree)->recalculate_height();
         }
         if (n->parent->right_subtree) {
-            dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->right_subtree)->recalculate_height();
+            static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(n->parent->right_subtree)->recalculate_height();
         }
     }
     return to_balance;
@@ -1601,7 +1601,7 @@ void AVL_tree<tkey, tvalue, compare>::rebalance_to_root(parent::node *from) {
     auto cur = from;
     while (cur != nullptr) {
         cur = AVL_tree<tkey, tvalue, compare>::rebalance(cur);
-        dynamic_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
+        static_cast<typename AVL_tree<tkey, tvalue, compare>::node *>(cur)->recalculate_height();
         if (cur->parent == nullptr) {
             this->_root = cur;
         }
