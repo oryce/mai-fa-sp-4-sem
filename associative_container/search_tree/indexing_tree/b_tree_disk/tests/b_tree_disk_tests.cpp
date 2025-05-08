@@ -22,6 +22,10 @@ struct SerializableInt {
     bool operator<(const SerializableInt& other) const {
         return value < other.value;
     }
+
+    bool operator==(const SerializableInt& other){
+        return value == other.value;
+    }
 };
 
 struct SerializableString {
@@ -62,6 +66,8 @@ struct SerializableString {
 
 int main()
 {
-    B_tree_disk<SerializableInt, SerializableString> tree("temp");
+    B_tree_disk<SerializableInt, SerializableString> tree("temp.txt");
     tree.insert(std::pair(SerializableInt(0), SerializableString("aboba")));
+
+    auto node = tree.disk_read(0);
 }
