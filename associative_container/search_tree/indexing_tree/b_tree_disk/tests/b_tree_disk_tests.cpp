@@ -67,7 +67,17 @@ struct SerializableString {
 int main()
 {
     B_tree_disk<SerializableInt, SerializableString> tree("temp.txt");
-    tree.insert(std::pair(SerializableInt(0), SerializableString("aboba")));
+    tree.insert(std::pair(SerializableInt(0), SerializableString("aboba0")));
+    tree.insert(std::pair(SerializableInt(1), SerializableString("aboba1")));
+    tree.insert(std::pair(SerializableInt(2), SerializableString("aboba2")));
+    tree.insert(std::pair(SerializableInt(3), SerializableString("aboba3")));
 
-    auto node = tree.disk_read(0);
+    auto node1 = tree.disk_read(0);
+    auto node2 = tree.disk_read(1);
+    auto node3 = tree.disk_read(2);
+    auto node4 = tree.disk_read(3);
+
+    tree.insert(std::pair(SerializableInt(4), SerializableString("aboba4")));
+
+    auto value = tree.at(SerializableInt(2));
 }

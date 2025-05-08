@@ -275,6 +275,7 @@ bool B_tree_disk<tkey, tvalue, compare, t>::insert(const B_tree_disk::tree_data_
         root.keys.insert(root.keys.begin(), data);
         root.pointers.insert(root.pointers.begin(), SIZE_MAX);
         prev_i = 0;
+        root.size = 1;
         disk_write(root);
     } else {
         auto cur_key = root.keys[0].first;
@@ -303,9 +304,7 @@ bool B_tree_disk<tkey, tvalue, compare, t>::insert(const B_tree_disk::tree_data_
             } else {
                 cur_node.position_in_disk = SIZE_MAX;
             }
-            if (cur_node.position_in_disk != SIZE_MAX){
-                path.push(std::move(std::pair<size_t, size_t>(cur_node.pointers[i], prev_i)));
-            }
+            path.push(std::move(std::pair<size_t, size_t>(prev.position_in_disk, prev_i)));
         }
         if (prev.keys.size() == maximum_keys_in_node){
             prev.keys.insert(prev.keys.begin() + i, data);
@@ -315,6 +314,7 @@ bool B_tree_disk<tkey, tvalue, compare, t>::insert(const B_tree_disk::tree_data_
         } else {
             prev.keys.insert(prev.keys.begin() + i, data);
             prev.pointers.insert(prev.pointers.begin() + i, SIZE_MAX);
+            prev.size++;
             disk_write(prev);
         }
     }
@@ -337,6 +337,10 @@ void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size
     auto root = disk_read(_position_root);
 
     size_t middle_ind = (maximum_keys_in_node+1) / 2;
+    if (middle_ind == node_to_split.keys.size() - 1){
+        middle_ind--;
+    }
+
     tkey middle_key = node_to_split.keys[middle_ind].first;
     tvalue middle_value = node_to_split.keys[middle_ind].second;
     size_t middle_index;
@@ -346,6 +350,7 @@ void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size
         root.position_in_disk = _count_of_node++;
         parent_node = root;
         middle_index = 0;
+        _position_root = root.position_in_disk;
     } else {
         size_t i;
         for(i = 0; i < parent_node.keys.size(); i++){
@@ -376,21 +381,20 @@ void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size
 
     left_part.keys.insert(left_part.keys.begin(), it_keys_begin, it_keys_begin + middle_ind);
     left_part.pointers.insert(left_part.pointers.begin(), it_point_begin, it_point_begin + middle_ind);
+    left_part.size = middle_ind;
 
     right_part.keys.insert(right_part.keys.begin(), it_keys_begin + middle_ind + 1, it_keys_end);
     right_part.pointers.insert(right_part.pointers.begin(), it_point_begin + middle_ind + 1, it_point_end);
+    right_part.size = node_to_split.keys.size() - middle_ind - 1;
 
     parent_node.keys.insert(parent_node.keys.begin() + middle_index, node_to_split.keys[middle_ind]);
     parent_node.pointers.insert(parent_node.pointers.begin() + middle_index, left_part.position_in_disk);
     parent_node.pointers.insert(parent_node.pointers.begin() + middle_index + 1, right_part.position_in_disk);
 
-    left_part.position_in_disk = _count_of_node++;
-    left_part.position_in_disk = _count_of_node++;
-
+    parent_node.size++;
     disk_write(left_part);
     disk_write(right_part);
     disk_write(parent_node);
-    disk_write(root);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -419,13 +423,10 @@ void B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::serialize(std::fstr
     stream.write(reinterpret_cast<const char*>(&_is_leaf), sizeof(bool));
     stream.write(reinterpret_cast<const char*>(&position_in_disk), sizeof(size_t));
     size_t i;
-    for (i = 0; i < maximum_pointers_in_node; i++){
-        try{
-            size_t value = pointers.at(i);
-            stream.write(reinterpret_cast<const char*>(&value), sizeof(size_t));
-        } catch(std::out_of_range){
-            break;
-        }
+    for (i = 0; i < pointers.size(); i++){
+        size_t value = pointers[i];
+        stream.write(reinterpret_cast<const char*>(&value), sizeof(size_t));
+
     }
     for (; i < maximum_pointers_in_node; i++){
         size_t value = SIZE_MAX;
@@ -433,13 +434,12 @@ void B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::serialize(std::fstr
     }
 
     for (i = 0; i < maximum_keys_in_node; i++){
-        try{
-            tree_data_type value = keys.at(i);
-            value.first.serialize(stream_for_data);
-            value.second.serialize(stream_for_data);
-        } catch(std::out_of_range){
+        if (i == keys.size()){
             break;
         }
+        tree_data_type value = keys[i];
+        value.first.serialize(stream_for_data);
+        value.second.serialize(stream_for_data);
     }
     for (; i < maximum_keys_in_node; i++){
         tree_data_type value = tree_data_type();
@@ -464,7 +464,7 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node B_tree_disk<tkey
     stream.read(reinterpret_cast<char*>(&res._is_leaf), sizeof(bool));
     stream.read(reinterpret_cast<char*>(&res.position_in_disk), sizeof(size_t));
     size_t i;
-    for (i = 0; i < res.size; i++){
+    for (i = 0; i < res.size + 1; i++){
         size_t value;
         stream.read(reinterpret_cast<char*>(&value), sizeof(size_t));
         res.pointers.push_back(value);
@@ -473,7 +473,7 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node B_tree_disk<tkey
         res.pointers.push_back(SIZE_MAX);
     }
 
-    for (i = 0; i < maximum_keys_in_node; i++){
+    for (i = 0; i < res.size; i++){
         tree_data_type value;
         value.first = tkey::deserialize(stream_for_data);
         value.second = tvalue::deserialize(stream_for_data);
@@ -613,7 +613,22 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::value
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 std::optional<tvalue> B_tree_disk<tkey, tvalue, compare, t>::at(const tkey & key)
 {
+    size_t i = 0;
+    size_t prev_i = 0;
+    auto cur_node = disk_read(_position_root);
+    auto cur_key = cur_node.keys[i];
+    while(cur_node.position_in_disk != SIZE_MAX){
+        i = 0;
+        for(; i < cur_node.keys.size() && compare_keys(cur_node.keys[i].first, key); i++){}
 
+        if (i < cur_node.keys.size() && cur_node.keys[i].first == key){
+            return std::optional<tvalue>(cur_node.keys[i].second);
+        }
+
+        cur_node = disk_read(cur_node.pointers[i]);
+        prev_i = i;
+    }
+    return {};
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
