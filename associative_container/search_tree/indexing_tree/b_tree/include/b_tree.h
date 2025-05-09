@@ -1423,6 +1423,10 @@ void B_tree<tkey, tvalue, compare, t>::split(B_tree::btree_node * node_to_split,
     parent_node->_keys.insert(parent_node->_keys.begin() + split_index_in_parent, node_to_split->_keys[middle_ind]);
     parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent, left_part);
     parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent + 1, right_part);
+
+    for(size_t i = parent_node->_keys.size() + 1; i < parent_node->_pointers.size(); i++){
+        parent_node->_pointers[i] = nullptr;
+    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -1632,64 +1636,119 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
                                                             std::stack<std::pair<btree_node*, size_t>> st) {
     if (node->_keys.size() > minimum_keys_in_node){
         node->_keys.erase(node->_keys.begin() + index_of_key);
+        node->_pointers.erase(node->_pointers.begin() + index_of_key);
         return;
     }
     B_tree::btree_node *cur_node = st.top().first;
     size_t i = st.top().second;
     st.pop();
-    while(cur_node != nullptr) {
-        B_tree::btree_node *parent = st.empty() ? nullptr : st.top().first;
-        if (parent == nullptr) {
-            if (cur_node->_keys.size() > 1) {
-                // в корне может быть < mininmum_keys_in_node ключей, спокойно удаляем
-                cur_node->_keys.erase(cur_node->_keys.begin() + index_of_key);
-            } else {
-                // в корне один элемент, удаляем его и делаем корнем одного из его потомков
-                if (cur_node->_pointers.size() > 0) {
-                    if (cur_node->_pointers[0] != nullptr) {
-                        _root = cur_node->_pointers[0];
+    B_tree::btree_node *parent = st.empty() ? nullptr : st.top().first;
+    if (parent == nullptr) {
+        if (cur_node->_keys.size() > 1) {
+            // в корне может быть < mininmum_keys_in_node ключей, спокойно удаляем
+            cur_node->_keys.erase(cur_node->_keys.begin() + index_of_key);
+            cur_node->_pointers.erase(cur_node->_pointers.begin() + index_of_key);
+        } else {
+            // в корне один элемент, удаляем его и делаем корнем одного из его потомков
+            if (cur_node->_pointers.size() > 0) {
+                if (cur_node->_pointers[0] != nullptr) {
+                    _root = cur_node->_pointers[0];
+                } else {
+                    if (cur_node->_pointers.size() > 1) {
+                        _root = cur_node->_pointers[1];
                     } else {
-                        if (cur_node->_pointers.size() > 1) {
-                            _root = cur_node->_pointers[1];
-                        } else {
-                            _root = nullptr;
-                        }
+                        _root = nullptr;
                     }
                 }
             }
-            return;
         }
+        return;
+    }
 
-        size_t size_left_sibling = 0;
-        size_t size_right_sibling = 0;
+    size_t size_left_sibling = 0;
+    size_t size_right_sibling = 0;
 
-        if (i > 0 && parent->_pointers[i - 1] != nullptr) {
-            size_left_sibling = parent->_pointers[i - 1]->_keys.size();
+    if (i > 0 && parent->_pointers[i - 1] != nullptr) {
+        size_left_sibling = parent->_pointers[i - 1]->_keys.size();
+    }
+
+    if (i + 1 < parent->_pointers.size() && parent->_pointers[i + 1] != nullptr) {
+        size_right_sibling = parent->_pointers[i + 1]->_keys.size();
+    }
+
+    if (size_left_sibling > minimum_keys_in_node) {
+        node->_keys.erase(node->_keys.begin() + index_of_key);
+        node->_pointers.erase(node->_pointers.begin() + index_of_key);
+
+        node->_keys.insert(node->_keys.begin(), parent->_keys[i]);
+        node->_pointers.push_back(nullptr);
+
+        parent->_keys[i] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
+
+        parent->_pointers[i - 1]->_keys.erase(parent->_pointers[i - 1]->_keys.begin() + size_left_sibling - 1);
+        parent->_pointers[i - 1]->_pointers.erase(parent->_pointers[i - 1]->_pointers.begin() + size_left_sibling - 1);
+    } else if (size_right_sibling > minimum_keys_in_node) {
+        node->_keys.erase(node->_keys.begin() + index_of_key);
+        node->_pointers.erase(node->_pointers.begin() + index_of_key);
+
+        node->_keys.push_back(parent->_keys[i]);
+        node->_pointers.push_back(nullptr);
+
+        parent->_keys[i] = parent->_pointers[i + 1]->_keys[0];
+
+        parent->_pointers[i + 1]->_keys.erase(parent->_pointers[i + 1]->_keys.begin());
+        parent->_pointers[i + 1]->_pointers.erase(parent->_pointers[i + 1]->_pointers.begin());
+    } else {
+        node->_keys.erase(node->_keys.begin() + index_of_key);
+        node->_pointers.erase(node->_pointers.begin() + index_of_key);
+
+        if (size_left_sibling > 0) {
+            merge(parent->_pointers[i - 1], cur_node, parent, i - 1);
+        } else if (size_right_sibling > 0) {
+            merge(cur_node, parent->_pointers[i + 1], parent, i);
         }
+        st.pop();
 
-        if (i < parent->_pointers.size() && parent->_pointers[i + 1] != nullptr) {
-            size_right_sibling = parent->_pointers[i + 1]->_keys.size();
-        }
+        while(!st.empty() && parent->_keys.size() < minimum_keys_in_node){
+            cur_node = parent;
+            parent = st.top().first;
+            i = st.top().second;
+            st.pop();
 
-        if (size_left_sibling > minimum_keys_in_node) {
-            node->_keys[index_of_key] = parent->_keys[i];
-            parent->_keys[i] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
-        } else if (size_right_sibling > minimum_keys_in_node) {
-            node->_keys[index_of_key] = parent->_keys[i];
-            parent->_keys[i] = parent->_pointers[i + 1]->_keys[0];
-        } else {
-            //если у обоих братьев мало ключей, то просто сливаемся с одним из них
-            node->_keys.erase(node->_keys.begin() + index_of_key);
+            if (i > 0 && parent->_pointers[i - 1] != nullptr) {
+                size_left_sibling = parent->_pointers[i - 1]->_keys.size();
+            }
+
+            if (i + 1 < parent->_pointers.size() && parent->_pointers[i + 1] != nullptr) {
+                size_right_sibling = parent->_pointers[i + 1]->_keys.size();
+            }
+
             if (size_left_sibling > 0) {
                 merge(parent->_pointers[i - 1], cur_node, parent, i - 1);
             } else if (size_right_sibling > 0) {
                 merge(cur_node, parent->_pointers[i + 1], parent, i);
+            } else {
+                std::cout << "shit";
             }
         }
-        index_of_key = i;
-        cur_node = st.empty() ? nullptr : st.top().first;
-        i = cur_node ? st.top().second : 0;
-        st.pop();
+
+        if (parent->_keys.size() == 0){
+            if (parent->_pointers.size() > 0) {
+                if (parent->_pointers[0] != nullptr) {
+                    _root = parent->_pointers[0];
+                } else {
+                    if (parent->_pointers.size() > 1) {
+                        _root = parent->_pointers[1];
+                    } else {
+                        _root = nullptr;
+                    }
+                }
+            }
+        }
+
+
+
+
     }
 }
 
@@ -1699,11 +1758,26 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
     new_node->_keys = left->_keys;
     new_node->_pointers = left->_pointers;
     new_node->_keys.push_back(parent->_keys[split_key_index]);
-    new_node->_pointers.push_back(parent->_pointers[split_key_index]);
-    new_node->_keys.insert(new_node->_keys.end(), right->_keys.begin(), right->_keys.end() - 1);
-    new_node->_pointers.insert(new_node->_pointers.end(), right->_pointers.begin(), right->_pointers.end() - 1);
-    parent->_keys[split_key_index] = new_node->_keys[new_node->_keys.size() - 1];
-    parent->_pointers[split_key_index] = new_node;
+    new_node->_pointers.push_back(nullptr);
+
+    new_node->_keys.insert(new_node->_keys.end(), right->_keys.begin(), right->_keys.end());
+    new_node->_pointers.insert(new_node->_pointers.end(), right->_pointers.begin(), right->_pointers.end());
+
+    parent->_keys.erase(parent->_keys.begin() + split_key_index);
+    parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
+
+    if (parent->_pointers.size() > split_key_index) {
+        parent->_pointers[split_key_index] = new_node;
+    } else {
+        parent->_pointers.push_back(new_node);
+    }
+
+    if (parent->_pointers.size() > split_key_index + 1) {
+        parent->_pointers[split_key_index+1] = nullptr;
+    } else {
+        parent->_pointers.push_back(nullptr);
+    }
+
     _allocator.delete_object(left);
     _allocator.delete_object(right);
 }
