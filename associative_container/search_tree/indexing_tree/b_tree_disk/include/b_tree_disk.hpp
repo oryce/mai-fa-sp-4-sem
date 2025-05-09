@@ -73,6 +73,7 @@ public:
 
         explicit btree_disk_node(bool is_leaf);
         btree_disk_node();
+        btree_disk_node(size_t);
         static const size_t node_metadata_size = 2 * sizeof(size_t)
                                                         + sizeof(bool)
                                                         + sizeof(size_t) * maximum_pointers_in_node
@@ -188,6 +189,12 @@ public:
      */
     bool erase(const tkey& key);
 
+    bool check_if_leaf(btree_disk_node, size_t);
+
+    void delete_key_from_leaf(size_t, btree_disk_node, std::stack<std::pair<size_t, size_t>>);
+
+    void merge(btree_disk_node &, btree_disk_node &, btree_disk_node &, size_t);
+
     bool is_valid() const noexcept;
 
 
@@ -211,11 +218,16 @@ private:
 
     btree_disk_node remove_array(btree_disk_node& node, size_t index, bool remove_left_ptr = true) noexcept;
 
-    void rebalance_node(std::stack<std::pair<size_t, size_t>> &path, btree_disk_node& node,size_t &index);
-
     void print_root_position() noexcept;
 
 };
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::btree_disk_node(size_t pos)
+                                    :  _is_leaf(true), size(0), position_in_disk(_count_of_node)
+{
+    position_in_disk = pos;
+}
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 size_t B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::_last_position_in_key_value_file = 0;
@@ -230,8 +242,163 @@ bool B_tree_disk<tkey, tvalue, compare, t>::is_valid() const noexcept
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 bool B_tree_disk<tkey, tvalue, compare, t>::erase(const tkey& key)
 {
+    size_t ind = 0;
+    size_t prev_index = 0;
+    auto cur_node = disk_read(_position_root);
+    std::stack<std::pair<size_t, size_t>> st = std::stack<std::pair<size_t, size_t>>();
+    btree_disk_node parent;
+    parent.position_in_disk = SIZE_MAX;
+    //находим нужный ключ
+    while(cur_node.position_in_disk != SIZE_MAX){
+        ind = 0;
+        for(; ind < cur_node.keys.size() && compare_keys(cur_node.keys[ind].first, key); ind++){}
+        st.push(std::pair<size_t, size_t>(cur_node.position_in_disk, prev_index));
+        if (ind < cur_node.keys.size() && cur_node.keys[ind].first == key){
+            break;
+        }
+
+        parent = cur_node;
+        if (ind >= cur_node.pointers.size()){
+            return false;
+        }
+        cur_node = disk_read(cur_node.pointers[ind]);
+        prev_index = ind;
+    }
+
+    if (cur_node.position_in_disk == SIZE_MAX){
+        return false;
+    }
+
+    //проверяем, является ли листом
+    bool is_leaf = check_if_leaf(cur_node, ind);
+
+    //в зависимости от того лист или нет обрабатываем удаление
+    tree_data_type* new_data;
+    if (is_leaf){
+        delete_key_from_leaf(ind, cur_node, st);
+    } else {
+        size_t index;
+        btree_disk_node n;
+        // Заменяем самым правым элементом из левого поддерева
+        // ВРОДЕ БЫ если элемент не лист, то левое поддерево у него должно быть всегда
+        n = disk_read(cur_node.pointers[index]);
+        st.push(std::pair(n.position_in_disk, index));
+        while(n.pointers.size() > 0 && n.pointers[n.pointers.size() - 1] != SIZE_MAX){
+            size_t tmp = n.pointers.size() - 1;
+            n = disk_read(n.pointers[n.pointers.size() - 1]);
+            st.push(std::pair(n.position_in_disk, tmp));
+        }
+        new_data = &n.keys[n.keys.size() - 1];
+        index = n.keys.size() - 1;
+
+        cur_node.keys[index] = std::move(*new_data);
+        disk_write(cur_node);
+        delete_key_from_leaf(index, n, st);
+    }
+    return true;
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+bool B_tree_disk<tkey, tvalue, compare, t>::check_if_leaf(btree_disk_node cur_node, size_t key_index) {
+    bool is_leaf = true;
+    if (cur_node.pointers.size() > key_index){
+        is_leaf = disk_read(cur_node.pointers[key_index]).position_in_disk == SIZE_MAX;
+        if (cur_node.pointers.size() > key_index + 1){
+            is_leaf = disk_read(cur_node.pointers[key_index + 1]).position_in_disk == SIZE_MAX;
+        }
+    }
+    return is_leaf;
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+void B_tree_disk<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key, B_tree_disk::btree_disk_node node,
+                                                                 std::stack<std::pair<size_t, size_t>> st) {
+    if (node.keys.size() > minimum_keys_in_node){
+        node.keys.erase(node.keys.begin() + index_of_key);
+        node.size--;
+        disk_write(node);
+        return;
+    }
+    btree_disk_node cur_node = disk_read(st.top().first);
+    size_t i = st.top().second;
+    st.pop();
+
+    btree_disk_node parent = st.empty() ? btree_disk_node(SIZE_MAX) : disk_read(st.top().first);
+    if (parent.position_in_disk == SIZE_MAX) {
+        if (cur_node.keys.size() > 1) {
+            // в корне может быть < mininmum_keys_in_node ключей, спокойно удаляем
+            cur_node.keys.erase(cur_node.keys.begin() + index_of_key);
+            cur_node.size--;
+        } else {
+            // в корне один элемент, удаляем его и делаем корнем одного из его потомков
+            if (cur_node.pointers.size() > 0) {
+                if (disk_read(cur_node.pointers[0]).position_in_disk != SIZE_MAX) {
+                    _position_root = cur_node.pointers[0];
+                } else {
+                    if (cur_node.pointers.size() > 1) {
+                        _position_root = cur_node.pointers[1];
+                    } else {
+                        _position_root = SIZE_MAX;
+                    }
+                }
+            }
+        }
+        disk_write(cur_node);
+        return;
+    }
 
 
+    size_t size_left_sibling = 0;
+    size_t size_right_sibling = 0;
+
+    auto left_sibling = disk_read(parent.pointers[i - 1]);
+    auto right_sibling = disk_read(parent.pointers[i + 1]);
+    if (i > 0 && left_sibling.position_in_disk != SIZE_MAX) {
+        size_left_sibling = left_sibling.keys.size();
+    }
+
+    if (i < parent.pointers.size() && right_sibling.position_in_disk != SIZE_MAX) {
+        size_right_sibling = right_sibling.keys.size();
+    }
+
+    if (size_left_sibling > minimum_keys_in_node) {
+        node.keys[index_of_key] = parent.keys[i - 1];
+        parent.keys[i - 1] = left_sibling.keys[size_left_sibling - 1];
+        disk_write(node);
+        disk_write(parent);
+    } else if (size_right_sibling > minimum_keys_in_node) {
+        node.keys[index_of_key] = parent.keys[i];
+        parent.keys[i] = right_sibling.keys[0];
+        disk_write(node);
+        disk_write(parent);
+    } else {
+        //если у обоих братьев мало ключей, то просто сливаемся с одним из них
+        node.keys.erase(node.keys.begin() + index_of_key);
+        node.size--;
+        if (size_left_sibling > 0) {
+            merge(left_sibling, cur_node, parent, i - 1);
+        } else if (size_right_sibling > 0) {
+            merge(cur_node, right_sibling, parent, i);
+        }
+        disk_write(node);
+    }
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+void B_tree_disk<tkey, tvalue, compare, t>::merge(B_tree_disk::btree_disk_node & left, B_tree_disk::btree_disk_node & right,
+                                                  B_tree_disk::btree_disk_node & parent, size_t split_key_index) {
+    btree_disk_node new_node(_count_of_node++);
+    new_node.keys = left.keys;
+    new_node.pointers = left.pointers;
+    new_node.keys.push_back(parent.keys[split_key_index]);
+    new_node.pointers.push_back(parent.pointers[split_key_index]);
+    new_node.keys.insert(new_node.keys.end(), right.keys.begin(), right.keys.end() - 1);
+    new_node.pointers.insert(new_node.pointers.end(), right.pointers.begin(), right.pointers.end() - 1);
+    new_node.size = left.size + right.size + 1;
+    parent.keys[split_key_index] = new_node.keys[new_node.keys.size() - 1];
+    parent.pointers[split_key_index] = new_node.position_in_disk;
+    disk_write(new_node);
+    disk_write(parent);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -243,12 +410,6 @@ void B_tree_disk<tkey, tvalue, compare, t>::print_root_position() noexcept
     }
     _file_for_tree.seekg(sizeof(size_t), std::ios::beg);
     _file_for_tree.write(reinterpret_cast<const char*>(&_position_root), sizeof(size_t));
-}
-
-template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
-void B_tree_disk<tkey, tvalue, compare, t>::rebalance_node(std::stack<std::pair<size_t, size_t>> &path, btree_disk_node& node,size_t &index)
-{
-
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -367,15 +528,6 @@ void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size
     btree_disk_node right_part = btree_disk_node();
     left_part.position_in_disk = _count_of_node++;
     right_part.position_in_disk = _count_of_node++;
-//    if (left_part == nullptr || right_part == nullptr){
-//        if (left_part != nullptr){
-//            _allocator.template delete_object<B_tree::btree_node>(left_part);
-//        }
-//        if (right_part != nullptr){
-//            _allocator.template delete_object<B_tree::btree_node>(right_part);
-//        }
-//        return std::pair(nullptr, nullptr);
-//    }
 
     const auto it_keys_begin = node_to_split.keys.begin();
     const auto it_keys_end = node_to_split.keys.end();
@@ -395,6 +547,11 @@ void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size
     parent_node.pointers.insert(parent_node.pointers.begin() + middle_index + 1, right_part.position_in_disk);
 
     parent_node.size++;
+    //в результате insert в pointers могут оказаться лишние указатели. Делаем их невалидными.
+    for(size_t i = parent_node.size + 1; i < parent_node.pointers.size(); i++){
+        parent_node.pointers[i] = SIZE_MAX;
+    }
+
     disk_write(left_part);
     disk_write(right_part);
     disk_write(parent_node);
