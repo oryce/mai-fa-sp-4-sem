@@ -151,7 +151,6 @@ TEST(bTreePositiveTests, test1)
     };
 
     B_tree<int, std::string, std::less<int>, 3> tree(std::less<int>(), nullptr, logger.get());
-
     tree.emplace(1, std::string("a"));
     tree.emplace(2, std::string("b"));
     tree.emplace(15, std::string("c"));
