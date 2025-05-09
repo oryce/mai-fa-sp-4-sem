@@ -1655,6 +1655,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
                     _root = cur_node->_pointers[0];
                 } else {
                     if (cur_node->_pointers.size() > 1) {
+                        _allocator.delete_object(_root);
                         _root = cur_node->_pointers[1];
                     } else {
                         _root = nullptr;
