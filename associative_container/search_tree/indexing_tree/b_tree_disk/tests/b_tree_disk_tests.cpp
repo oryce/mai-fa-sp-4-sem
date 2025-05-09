@@ -68,14 +68,20 @@ int main()
 {
     B_tree_disk<SerializableInt, SerializableString> tree("temp.txt");
     tree.insert(std::pair(SerializableInt(0), SerializableString("aboba0")));
+    auto tmp = tree.disk_read(0);
     tree.insert(std::pair(SerializableInt(1), SerializableString("aboba1")));
     tree.insert(std::pair(SerializableInt(2), SerializableString("aboba2")));
     tree.insert(std::pair(SerializableInt(3), SerializableString("aboba3")));
+    tree.insert(std::pair(SerializableInt(4), SerializableString("aboba4")));
+    tree.insert(std::pair(SerializableInt(5), SerializableString("aboba5")));
+    tree.insert(std::pair(SerializableInt(6), SerializableString("aboba6")));
 
-    auto node1 = tree.disk_read(0);
+//    auto node1 = tree.disk_read(0);
     auto node2 = tree.disk_read(1);
-    auto node3 = tree.disk_read(2);
-    auto node4 = tree.disk_read(3);
+//    auto node3 = tree.disk_read(2);
+    auto node4 = tree.disk_read(2);
+    auto node5 = tree.disk_read(4);
+    auto node6 = tree.disk_read(5);
 
     tree.insert(std::pair(SerializableInt(4), SerializableString("aboba4")));
 
