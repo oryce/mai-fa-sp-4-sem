@@ -1655,12 +1655,12 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
                     _root = cur_node->_pointers[0];
                 } else {
                     if (cur_node->_pointers.size() > 1) {
-                        _allocator.delete_object(_root);
                         _root = cur_node->_pointers[1];
                     } else {
                         _root = nullptr;
                     }
                 }
+                _allocator.delete_object(cur_node);
             }
         }
         return;
@@ -1710,6 +1710,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
         }
         st.pop();
 
+        //Если после мержа в родителе осталось сликшом мало ключей, продолжаем мержить
         while(!st.empty() && parent->_keys.size() < minimum_keys_in_node){
             cur_node = parent;
             parent = st.top().first;
@@ -1729,10 +1730,12 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
             } else if (size_right_sibling > 0) {
                 merge(cur_node, parent->_pointers[i + 1], parent, i);
             } else {
-                std::cout << "shit";
+                throw std::logic_error("no siblings to merge");
             }
         }
 
+        //parent = _root, так как мы поднимаемся до самого верха
+        // если вдруг в корне осталось 0 ключей, заменяем его
         if (parent->_keys.size() == 0){
             if (parent->_pointers.size() > 0) {
                 if (parent->_pointers[0] != nullptr) {
@@ -1744,12 +1747,11 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
                         _root = nullptr;
                     }
                 }
+            } else {
+                _root = nullptr;
             }
+            _allocator.delete_object(parent);
         }
-
-
-
-
     }
 }
 
