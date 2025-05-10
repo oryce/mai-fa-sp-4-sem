@@ -372,6 +372,7 @@ public:
     void split(btree_node*, btree_node*);
     void merge(B_tree::btree_node*, B_tree::btree_node*, B_tree::btree_node*, size_t);
     static bool check_if_leaf(B_tree::btree_node*, size_t);
+    std::pair<size_t, bool> find_index(const tkey &key, B_tree::btree_node* node) const noexcept;
 
     // endregion modifiers declaration
 };
@@ -537,7 +538,7 @@ B_tree<tkey, tvalue, compare, t>& B_tree<tkey, tvalue, compare, t>::operator=(B_
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void B_tree<tkey, tvalue, compare, t>::go_to_previous(std::stack<std::pair<btree_node *, size_t>> & _path, size_t & _index) {
-    auto* cur_node = const_cast<B_tree::btree_node*>(_path.top().first);
+    auto* cur_node = _path.top().first;
     if (cur_node->_pointers.size() > _index && cur_node->_pointers[_index] != nullptr){
         //переходим в предыдущее поддерево
         _path.push(std::pair(cur_node->_pointers[_index], _index));
@@ -1796,7 +1797,6 @@ bool B_tree<tkey, tvalue, compare, t>::check_if_leaf(B_tree::btree_node * cur_no
     }
     return is_leaf;
 }
-
 
 // endregion modifiers implementation
 
