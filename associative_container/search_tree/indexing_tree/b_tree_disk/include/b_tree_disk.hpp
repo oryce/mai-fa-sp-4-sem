@@ -159,7 +159,8 @@ public:
         bool operator!=(self& other) noexcept;
 
         explicit btree_disk_const_iterator(B_tree_disk<tkey, tvalue, compare, t>& tree, const std::stack<std::pair<size_t, size_t>>& path = std::stack<std::pair<size_t, size_t>>(), size_t index = 0);
-
+        size_t index() const noexcept;
+        size_t depth() const noexcept;
     };
 
     friend class btree_disk_const_iterator;
@@ -179,6 +180,8 @@ public:
      */
     bool insert(const tree_data_type& data);
 
+    template <typename ...Args>
+    bool emplace(Args&&... args);
     /*
      * Updates value if key exists
      */
@@ -210,6 +213,18 @@ private:
     void print_root_position() noexcept;
 
 };
+
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+size_t B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::depth() const noexcept {
+    return _path.size() - 1;
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+size_t B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::index() const noexcept {
+    return _index;
+}
+
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::btree_disk_node(size_t pos)
@@ -568,6 +583,12 @@ bool B_tree_disk<tkey, tvalue, compare, t>::insert(const B_tree_disk::tree_data_
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+template<typename... Args>
+bool B_tree_disk<tkey, tvalue, compare, t>::emplace(Args &&... args) {
+    return this->insert(tree_data_type(args ...));
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 void B_tree_disk<tkey, tvalue, compare, t>::split_node(std::stack<std::pair<size_t, size_t>> path)
 {
     if (path.empty()){
@@ -781,17 +802,17 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator B_tree
 {
     //наименьшее значение, то есть самое левое
     if (_position_root == SIZE_MAX){
-        return btree_disk_const_iterator(std::stack<std::pair<size_t, size_t>>(),  0);
+        return btree_disk_const_iterator(*this, std::stack<std::pair<size_t, size_t>>(),  0);
     }
     btree_disk_node cur_node = disk_read(_position_root);
     std::stack<std::pair<size_t, size_t>> st;
     st.emplace(_position_root, 0);
-    while(cur_node->_pointers.size() > 0 && cur_node->_pointers[0] != nullptr){
-        cur_node = disk_read(cur_node->_pointers[0]);
+    while(cur_node.pointers.size() > 0 && cur_node.pointers[0] != SIZE_MAX){
+        cur_node = disk_read(cur_node.pointers[0]);
         st.push(std::pair(cur_node.position_in_disk, 0));
     }
 
-    return btree_disk_const_iterator(st, 0);
+    return btree_disk_const_iterator(*this, st, 0);
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -799,25 +820,25 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator B_tree
 {
     //наибольшее значение, то есть самое правое
     if (_position_root == SIZE_MAX){
-        return btree_disk_const_iterator(std::stack<std::pair<size_t, size_t>>(),  0);
+        return btree_disk_const_iterator(*this, std::stack<std::pair<size_t, size_t>>(),  0);
     }
     btree_disk_node root = disk_read(_position_root);
     std::stack<std::pair<size_t, size_t>> st;
     st.emplace(_position_root, 0);
-    return btree_disk_const_iterator(st, root->_keys.size());
+    return btree_disk_const_iterator(*this, st, root.keys.size());
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::self& B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::operator++()
 {
     if (_path.empty()){
-        return;
+        return *this;
     }
     btree_disk_node cur_node = _tree.disk_read(_path.top().first);
 
     if (cur_node.pointers.size() > _index + 1 && cur_node.pointers[_index + 1] != SIZE_MAX){
         //переходим в следующее поддерево
-        _path.push(std::pair(cur_node->_pointers[_index + 1], _index + 1));
+        _path.push(std::pair(cur_node.pointers[_index + 1], _index + 1));
         _index = 0;
     } else if (cur_node.keys.size() > _index + 1){
         //переходим к следующему ключу в листе
@@ -828,13 +849,14 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::self&
             _index = _path.top().second;
             _path.pop();
             cur_node = _tree.disk_read(_path.top().first);
-            if (cur_node->_keys.size() > _index){
-                return;
+            if (cur_node.keys.size() > _index){
+                return *this;
             }
         }
         //если мы попали сюда, то значит мы обошли все ноды и сейчас находимся в корне
         _index = _tree.disk_read(_path.top().first).keys.size(); // делаем индекс таким, чтобы итератор указывал за последний элемент
     }
+    return *this;
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
@@ -861,6 +883,7 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::self&
         _index = _path.top().second;
         _path.pop();
     }
+    return *this;
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
