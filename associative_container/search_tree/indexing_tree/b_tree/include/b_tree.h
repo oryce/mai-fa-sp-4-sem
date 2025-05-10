@@ -1574,44 +1574,43 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename B_tree<tkey, tvalue, compare, t>::btree_iterator
 B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
 {
-    size_t ind = 0;
+    size_t index = 0;
     size_t prev_index = 0;
     auto cur_node = _root;
     std::stack<std::pair<btree_node*, size_t>> st = std::stack<std::pair<btree_node*, size_t>>();
     B_tree<tkey, tvalue, compare, t>::btree_node* parent = nullptr;
     //находим нужный ключ
     while(cur_node != nullptr){
-        ind = 0;
-        for(; ind < cur_node->_keys.size() && compare_keys(cur_node->_keys[ind].first, key); ind++){}
+        index = 0;
+        for(; index < cur_node->_keys.size() && compare_keys(cur_node->_keys[index].first, key); index++){}
         st.push(std::pair<btree_node*, size_t>(cur_node, prev_index));
-        if (ind < cur_node->_keys.size() && cur_node->_keys[ind].first == key){
+        if (index < cur_node->_keys.size() && cur_node->_keys[index].first == key){
             break;
         }
 
         parent = cur_node;
-        if (ind >= cur_node->_pointers.size()){
+        if (index >= cur_node->_pointers.size()){
             return end();
         }
-        cur_node = cur_node->_pointers[ind];
-        prev_index = ind;
+        cur_node = cur_node->_pointers[index];
+        prev_index = index;
     }
 
     if (cur_node == nullptr){
         return end();
     }
 
-    btree_iterator next(st, ind);
+    btree_iterator next(st, index);
     next++;
 
     //проверяем, является ли листом
-    bool is_leaf = check_if_leaf(cur_node, ind);
+    bool is_leaf = check_if_leaf(cur_node, index);
 
     //в зависимости от того лист или нет обрабатываем удаление
     tree_data_type* new_data;
     if (is_leaf){
-       delete_key_from_leaf(ind, cur_node, st);
+       delete_key_from_leaf(index, cur_node, st);
     } else {
-        size_t index;
         B_tree<tkey, tvalue, compare, t>::btree_node* n;
         // Заменяем самым правым элементом из левого поддерева
         // ВРОДЕ БЫ если элемент не лист, то левое поддерево у него должно быть всегда
@@ -1681,10 +1680,10 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
         node->_keys.erase(node->_keys.begin() + index_of_key);
         node->_pointers.erase(node->_pointers.begin() + index_of_key);
 
-        node->_keys.insert(node->_keys.begin(), parent->_keys[i]);
+        node->_keys.insert(node->_keys.begin(), parent->_keys[i - 1]);
         node->_pointers.push_back(nullptr);
 
-        parent->_keys[i] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
+        parent->_keys[i - 1] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
 
         parent->_pointers[i - 1]->_keys.erase(parent->_pointers[i - 1]->_keys.begin() + size_left_sibling - 1);
         parent->_pointers[i - 1]->_pointers.erase(parent->_pointers[i - 1]->_pointers.begin() + size_left_sibling - 1);
