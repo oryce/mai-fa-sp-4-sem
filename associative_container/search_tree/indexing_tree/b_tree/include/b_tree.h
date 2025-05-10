@@ -1660,6 +1660,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
                         _root = nullptr;
                     }
                 }
+                _allocator.delete_object(cur_node);
             }
         }
         return;
@@ -1749,6 +1750,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
             } else {
                 _root = nullptr;
             }
+            _allocator.delete_object(parent);
         }
     }
 }
