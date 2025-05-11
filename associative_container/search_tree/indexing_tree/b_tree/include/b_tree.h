@@ -1472,7 +1472,14 @@ B_tree<tkey, tvalue, compare, t>::insert(const tree_data_type& data)
         if (node->_keys.size() == maximum_keys_in_node){
             node->_keys.insert(node->_keys.begin() + i, data);
             node->_pointers.insert(node->_pointers.begin() + i, nullptr);
-            split(node, parent_node);
+            while (node != nullptr && node->_keys.size() > maximum_keys_in_node) {
+                split(node, parent_node);
+                node = parent_node;
+                parent_node = path.empty() ? nullptr : path.top().first;
+                if (!path.empty()){
+                    path.pop();
+                }
+            }
         } else {
             node->_keys.insert(node->_keys.begin() + i, data);
             node->_pointers.insert(node->_pointers.begin() + i, nullptr);
