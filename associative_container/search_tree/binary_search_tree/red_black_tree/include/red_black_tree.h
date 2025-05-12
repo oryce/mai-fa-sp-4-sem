@@ -43,7 +43,8 @@ public:
 private:
 
     using parent = binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>;
-    
+    friend __detail::bst_impl<tkey, tvalue, compare, __detail::RB_TAG>;
+
     struct node final:
         parent::node
     {
@@ -589,14 +590,19 @@ namespace __detail {
     binary_search_tree<tkey, tvalue, compare, RB_TAG>::node* bst_impl<tkey, tvalue, compare, RB_TAG>::create_node(
             binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, Args&& ...args)
     {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare> template<class ...Args> binary_search_tree<tkey, tvalue, compare, RB_TAG>::node* bst_impl<tkey, tvalue, compare, RB_TAG>::create_node(binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, Args&& ...args)", "your code should be here...");
+        auto* node = cont._allocator.new_object<red_black_tree<tkey, tvalue, compare>::node>(args ...);
+
+        node->left_subtree = nullptr;
+        node->right_subtree = nullptr;
+
+        return node;
     }
 
     template<typename tkey, typename tvalue, typename compare>
     void bst_impl<tkey, tvalue, compare, RB_TAG>::delete_node(
             binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, binary_search_tree<tkey, tvalue, compare, RB_TAG>::node* n)
     {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare> void bst_impl<tkey, tvalue, compare, RB_TAG>::delete_node(binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont)", "your code should be here...");
+        cont._allocator.delete_object(n);
     }
 
     template<typename tkey, typename tvalue, typename compare>
@@ -629,8 +635,8 @@ namespace __detail {
 template<typename tkey, typename tvalue, compator<tkey> compare>
 template<class ...Args>
 red_black_tree<tkey, tvalue, compare>::node::node(parent::node* par, Args&&... args)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>::node(par, args...)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> template<class ...Args> red_black_tree<tkey, tvalue, compare>::node::node(parent::node* par, Args&&... args)", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -638,8 +644,8 @@ red_black_tree<tkey, tvalue, compare>::red_black_tree(
         const compare& comp,
         pp_allocator<value_type> alloc,
         logger *log)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(comp, alloc, log)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> red_black_tree<tkey, tvalue, compare>::red_black_tree(const compare& , pp_allocator<value_type> , logger *)", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -647,8 +653,8 @@ red_black_tree<tkey, tvalue, compare>::red_black_tree(
         pp_allocator<value_type> alloc,
         const compare& comp,
         logger *log)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(alloc, comp, log)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> red_black_tree<tkey, tvalue, compare>::red_black_tree(pp_allocator<value_type> , const compare& , logger *)", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -658,8 +664,8 @@ red_black_tree<tkey, tvalue, compare>::red_black_tree(
         const compare& cmp,
         pp_allocator<value_type> alloc,
         logger* log)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(begin, end, cmp, alloc, log)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> template<input_iterator_for_pair<tkey, tvalue> iterator> red_black_tree<tkey, tvalue, compare>::red_black_tree(iterator , iterator , const compare& , pp_allocator<value_type> , logger* )", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -669,8 +675,8 @@ red_black_tree<tkey, tvalue, compare>::red_black_tree(
         const compare& cmp,
         pp_allocator<value_type> alloc,
         logger* log)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(range, cmp, alloc, log)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> template<std::ranges::input_range Range> red_black_tree<tkey, tvalue, compare>::red_black_tree( Range&& range, const compare& cmp, pp_allocator<value_type> alloc, logger* log)", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -679,370 +685,382 @@ red_black_tree<tkey, tvalue, compare>::red_black_tree(
         const compare& cmp,
         pp_allocator<value_type> alloc,
         logger* log)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(data, cmp, alloc, log)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> red_black_tree<tkey, tvalue, compare>::red_black_tree(std::initializer_list<std::pair<tkey, tvalue>> data, const compare& cmp, pp_allocator<value_type> alloc, logger* log)", "your code should be here...");
 }
 
 // region iterator implementation
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::node* n) noexcept
+    : parent::prefix_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix_iterator it) noexcept
+    : parent::prefix_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare> red_black_tree<tkey, tvalue, compare>::prefix_iterator::prefix_iterator(parent::prefix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::prefix_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::prefix_iterator::get_color() const noexcept ", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(parent::prefix_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(parent::node* n) noexcept
+    : parent::prefix_const_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(parent::prefix_const_iterator it) noexcept
+    : parent::prefix_const_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(parent::prefix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::get_color() const noexcept ", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(parent::prefix_const_iterator::_base.get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(prefix_iterator it) noexcept
+    : parent::prefix_const_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_iterator::prefix_const_iterator(prefix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(parent::node* n) noexcept
+    : parent::prefix_reverse_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(parent::prefix_reverse_iterator it) noexcept
+    : parent::prefix_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(parent::prefix_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::get_color() const noexcept ", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(prefix_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(prefix_iterator it) noexcept
+    : parent::prefix_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::prefix_reverse_iterator(prefix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::prefix_iterator() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::operator prefix_iterator() const noexcept ", "your code should be here...");
+    return parent::prefix_reverse_iterator::operator prefix_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_iterator
 red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::base() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_iterator red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator::base() const noexcept ", "your code should be here...");
+    return parent::prefix_reverse_iterator::base();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(parent::node* n) noexcept
+    : parent::prefix_const_reverse_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(parent::prefix_const_reverse_iterator it) noexcept
+    : parent::prefix_const_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(parent::prefix_const_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::get_color() const noexcept ", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(prefix_const_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(prefix_const_iterator it) noexcept
+    : parent::prefix_const_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::prefix_const_reverse_iterator(prefix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::prefix_const_iterator() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::operator prefix_const_iterator() const noexcept ", "your code should be here...");
+    return parent::prefix_const_reverse_iterator::operator prefix_const_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator
 red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::base() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator::base() const noexcept ", "your code should be here...");
+    return parent::prefix_const_reverse_iterator::base();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::node* n) noexcept
+    : parent::infix_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::infix_iterator it) noexcept
+    : parent::infix_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_iterator::infix_iterator(parent::infix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::infix_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::infix_iterator::get_color() const noexcept ", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(infix_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(parent::node* n) noexcept
+    : parent::infix_const_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(parent::infix_const_iterator it) noexcept
+    : parent::infix_const_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(parent::infix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::infix_const_iterator::get_color() const noexcept
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::infix_const_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(parent::infix_const_iterator::_base.get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(infix_iterator it) noexcept
+    : parent::infix_const_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_iterator::infix_const_iterator(infix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(parent::node* n) noexcept
+    : parent::infix_reverse_iterator(n)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(parent::node* n) noexcept) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(parent::infix_reverse_iterator it) noexcept
+    : parent::infix_reverse_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(parent::infix_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::get_color() const noexcept
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(infix_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(infix_iterator it) noexcept
+    : parent::infix_reverse_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::infix_reverse_iterator(infix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::infix_iterator() const noexcept
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::operator infix_iterator() const noexcept", "your code should be here...");
+    return parent::infix_reverse_iterator::operator infix_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::base() const noexcept
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator::base() const noexcept", "your code should be here...");
+    return parent::infix_reverse_iterator::base();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(parent::node* n) noexcept
+    : parent::infix_const_reverse_iterator(n)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(parent::infix_const_reverse_iterator it) noexcept
+    : parent::infix_const_reverse_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(parent::infix_const_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::get_color() const noexcept
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(infix_const_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(infix_const_iterator it) noexcept
+    : parent::infix_const_reverse_iterator(it)
 {
-throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::infix_const_reverse_iterator(infix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::infix_const_iterator() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::operator infix_const_iterator() const noexcept", "your code should be here...");
+    return parent::infix_const_reverse_iterator::operator infix_const_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::base() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator::base() const noexcept", "your code should be here...");
+    return parent::infix_const_reverse_iterator::base();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_iterator::postfix_iterator(parent::node* n) noexcept
+    : parent::postfix_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_iterator::postfix_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_iterator::postfix_iterator(parent::postfix_iterator it) noexcept
+    : parent::postfix_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_iterator::postfix_iterator(parent::postfix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::postfix_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::postfix_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(postfix_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(parent::node* n) noexcept
+    : parent::postfix_const_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(parent::postfix_const_iterator it) noexcept
+    : parent::postfix_const_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(parent::postfix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(parent::postfix_const_iterator::_base.get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(postfix_iterator it) noexcept
+    : parent::postfix_const_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_iterator::postfix_const_iterator(postfix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(parent::node* n) noexcept
+    : parent::postfix_reverse_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(parent::postfix_reverse_iterator it) noexcept
+    : parent::postfix_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(parent::postfix_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(postfix_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(postfix_iterator it) noexcept
+    : parent::postfix_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::postfix_reverse_iterator(postfix_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::postfix_iterator() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::operator postfix_iterator() const noexcept", "your code should be here...");
+    return parent::postfix_reverse_iterator::operator postfix_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_iterator
 red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::base() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_iterator red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator::base() const noexcept", "your code should be here...");
+    return parent::postfix_reverse_iterator::base();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(parent::node* n) noexcept
+    : parent::postfix_const_reverse_iterator(n)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(parent::node* n) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(parent::postfix_const_reverse_iterator it) noexcept
+    : parent::postfix_const_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(parent::postfix_const_reverse_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::node_color
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::get_color() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::node_color red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::get_color() const noexcept", "your code should be here...");
+    auto* node = static_cast<red_black_tree::node*>(postfix_const_reverse_iterator::get_node());
+    return node->color;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(postfix_const_iterator it) noexcept
+    : parent::postfix_const_reverse_iterator(it)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::postfix_const_reverse_iterator(postfix_const_iterator it) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::operator red_black_tree<tkey, tvalue, compare>::postfix_const_iterator() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::operator postfix_const_iterator() const noexcept", "your code should be here...");
+    return parent::postfix_const_reverse_iterator::operator postfix_const_iterator();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator
 red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::base() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator::base() const noexcept", "your code should be here...");
+    return parent::postfix_const_reverse_iterator::base();
 }
 
 // endregion iterator implementation
@@ -1053,336 +1071,336 @@ template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::begin() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::begin() noexcept", "your code should be here...");
+    return parent::begin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::end() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::end() noexcept", "your code should be here...");
+    return parent::end();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::begin() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::begin() const noexcept", "your code should be here...");
+    return parent::begin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::end() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::end() const noexcept", "your code should be here...");
+    return parent::end();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cbegin() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::cbegin() const noexcept", "your code should be here...");
+    return parent::cbegin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cend() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::cend() const noexcept", "your code should be here...");
+    return parent::cend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin() noexcept", "your code should be here...");
+    return parent::rbegin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend() noexcept", "your code should be here...");
+    return parent::rend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin() const noexcept", "your code should be here...");
+    return parent::rbegin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend() const noexcept", "your code should be here...");
+    return parent::rend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crbegin() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crbegin() const noexcept", "your code should be here...");
+    return parent::crbegin();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crend() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crend() const noexcept", "your code should be here...");
+    return parent::crend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_iterator
 red_black_tree<tkey, tvalue, compare>::begin_prefix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_iterator red_black_tree<tkey, tvalue, compare>::begin_prefix() noexcept", "your code should be here...");
+    return parent::begin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_iterator
 red_black_tree<tkey, tvalue, compare>::end_prefix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_iterator red_black_tree<tkey, tvalue, compare>::end_prefix() noexcept", "your code should be here...");
+    return parent::end_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator
 red_black_tree<tkey, tvalue, compare>::begin_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator red_black_tree<tkey, tvalue, compare>::begin_prefix() const noexcept", "your code should be here...");
+    return parent::begin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator
 red_black_tree<tkey, tvalue, compare>::end_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator red_black_tree<tkey, tvalue, compare>::end_prefix() const noexcept", "your code should be here...");
+    return parent::end_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cbegin_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator red_black_tree<tkey, tvalue, compare>::cbegin_prefix() const noexcept", "your code should be here...");
+    return parent::cbegin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cend_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_iterator red_black_tree<tkey, tvalue, compare>::cend_prefix() const noexcept", "your code should be here...");
+    return parent::cend_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_prefix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_reverse_iteratorred_black_tree<tkey, tvalue, compare>::rbegin_prefix() noexcept", "your code should be here...");
+    return parent::rbegin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_prefix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_prefix() noexcept", "your code should be here...");
+    return parent::rend_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin_prefix() const noexcept", "your code should be here...");
+    return parent::rbegin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_prefix() const noexcept", "your code should be here...");
+    return parent::rend_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crbegin_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crbegin_prefix() const noexcept", "your code should be here...");
+    return parent::crbegin_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crend_prefix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::prefix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crend_prefix() const noexcept", "your code should be here...");
+    return parent::crend_prefix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::begin_infix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::begin_infix() noexcept", "your code should be here...");
+    return parent::begin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::end_infix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::end_infix() noexcept", "your code should be here...");
+    return parent::end_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::begin_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::begin_infix() const noexcept", "your code should be here...");
+    return parent::begin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::end_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::end_infix() const noexcept", "your code should be here...");
+    return parent::end_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cbegin_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::cbegin_infix() const noexcept", "your code should be here...");
+    return parent::cbegin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cend_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::cend_infix() const noexcept", "your code should be here...");
+    return parent::cend_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_infix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin_infix() noexcept", "your code should be here...");
+    return parent::rbegin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_infix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_infix() noexcept", "your code should be here...");
+    return parent::rend_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin_infix() const noexcept", "your code should be here...");
+    return parent::rbegin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_infix() const noexcept", "your code should be here...");
+    return parent::rend_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crbegin_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crbegin_infix() const noexcept", "your code should be here...");
+    return parent::crbegin_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crend_infix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crend_infix() const noexcept", "your code should be here...");
+    return parent::crend_infix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_iterator
 red_black_tree<tkey, tvalue, compare>::begin_postfix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_iterator red_black_tree<tkey, tvalue, compare>::begin_postfix() noexcept", "your code should be here...");
+    return parent::begin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_iterator
 red_black_tree<tkey, tvalue, compare>::end_postfix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_iterator red_black_tree<tkey, tvalue, compare>::end_postfix() noexcept", "your code should be here...");
+    return parent::end_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator
 red_black_tree<tkey, tvalue, compare>::begin_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator red_black_tree<tkey, tvalue, compare>::begin_postfix() const noexcept", "your code should be here...");
+    return parent::begin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator
 red_black_tree<tkey, tvalue, compare>::end_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator red_black_tree<tkey, tvalue, compare>::end_postfix() const noexcept", "your code should be here...");
+    return parent::end_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cbegin_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator red_black_tree<tkey, tvalue, compare>::cbegin_postfix() const noexcept", "your code should be here...");
+    return parent::cbegin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator
 red_black_tree<tkey, tvalue, compare>::cend_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_iterator red_black_tree<tkey, tvalue, compare>::cend_postfix() const noexcept", "your code should be here...");
+    return parent::cend_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_postfix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin_postfix() noexcept", "your code should be here...");
+    return parent::rbegin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_postfix() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_postfix() noexcept", "your code should be here...");
+    return parent::rend_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rbegin_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rbegin_postfix() const noexcept", "your code should be here...");
+    return parent::rbegin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::rend_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::rend_postfix() const noexcept", "your code should be here...");
+    return parent::rend_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crbegin_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crbegin_postfix() const noexcept", "your code should be here...");
+    return parent::crbegin_postfix();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator
 red_black_tree<tkey, tvalue, compare>::crend_postfix() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::postfix_const_reverse_iterator red_black_tree<tkey, tvalue, compare>::crend_postfix() const noexcept", "your code should be here...");
+    return parent::crend_postfix();
 }
 
 // endregion iterator requests implementation
@@ -1392,39 +1410,41 @@ red_black_tree<tkey, tvalue, compare>::crend_postfix() const noexcept
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::~red_black_tree() noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::~red_black_tree() noexcept", "your code should be here...");
+    // no-op
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::red_black_tree(red_black_tree const &other)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(other)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::red_black_tree(red_black_tree const &other)", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare> &
 red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree const &other)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare> & red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree const &other)", "your code should be here...");
+    parent::operator=(other);
+    return *this;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::red_black_tree(red_black_tree &&other) noexcept
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(other)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare>::red_black_tree(red_black_tree &&other) noexcept", "your code should be here...");
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare> &
 red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree &&other) noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> red_black_tree<tkey, tvalue, compare> & red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree &&other) noexcept", "your code should be here...");
+    parent::operator=(other);
+    return *this;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 void red_black_tree<tkey, tvalue, compare>::swap(parent& other) noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> void red_black_tree<tkey, tvalue, compare>::swap(parent& other) noexcept", "your code should be here...");
+    parent::swap(other);
 }
 
 // endregion rb_tree implementation
@@ -1433,14 +1453,14 @@ template<typename tkey, typename tvalue, compator<tkey> compare>
 std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool>
 red_black_tree<tkey, tvalue, compare>::insert(const value_type& value)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool> red_black_tree<tkey, tvalue, compare>::insert(const value_type& value)", "your code should be here...");
+    return parent::insert(value);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool>
 red_black_tree<tkey, tvalue, compare>::insert(value_type&& value)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool> red_black_tree<tkey, tvalue, compare>::insert(value_type&& value)", "your code should be here...");
+    return parent::insert(value);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1448,21 +1468,21 @@ template<class ...Args>
 std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool>
 red_black_tree<tkey, tvalue, compare>::emplace(Args&&... args)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> template<class ...Args> std::pair<typename red_black_tree<tkey, tvalue, compare>::infix_iterator, bool> red_black_tree<tkey, tvalue, compare>::emplace(Args&&... args)", "your code should be here...");
+    return parent::emplace(args...);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::insert_or_assign(const value_type& value)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::insert_or_assign(const value_type& value)", "your code should be here...");
+    return parent::insert_or_assign(value);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::insert_or_assign(value_type&& value)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::insert_or_assign(value_type&& value)", "your code should be here...");
+    return parent::insert_or_assign(value);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
@@ -1470,77 +1490,77 @@ template<class ...Args>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::emplace_or_assign(Args&&... args)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> template<class ...Args> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::emplace_or_assign(Args&&... args)", "your code should be here...");
+    return parent::emplace_or_assign(args);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::find(const tkey& key)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::find(const tkey& key)", "your code should be here...");
+    return parent::find(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::find(const tkey& key) const
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::find(const tkey& key) const", "your code should be here...");
+    return parent::find(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::lower_bound(const tkey& key)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::lower_bound(const tkey& key)", "your code should be here...");
+    return parent::lower_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::lower_bound(const tkey& key) const
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::lower_bound(const tkey& key) const", "your code should be here...");
+    return parent::lower_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::upper_bound(const tkey& key)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::upper_bound(const tkey& key)", "your code should be here...");
+    return parent::upper_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator
 red_black_tree<tkey, tvalue, compare>::upper_bound(const tkey& key) const
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_const_iterator red_black_tree<tkey, tvalue, compare>::upper_bound(const tkey& key) const", "your code should be here...");
+    return parent::upper_bound(key);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::erase(infix_iterator pos)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::erase(infix_iterator pos)", "your code should be here...");
+    return parent::erase(pos);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::erase(infix_const_iterator pos)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::erase(infix_const_iterator pos)", "your code should be here...");
+    return parent::erase(pos);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::erase(infix_iterator first, infix_iterator last)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::erase(infix_iterator first, infix_iterator last)", "your code should be here...");
+    return parent::erase(first, last);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::erase(infix_const_iterator first, infix_const_iterator last)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, typename compare> typename red_black_tree<tkey, tvalue, compare>::infix_iterator red_black_tree<tkey, tvalue, compare>::erase(infix_const_iterator first, infix_const_iterator last)", "your code should be here...");
+    return parent::erase(first, last);
 }
 
 #endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_RED_BLACK_TREE_H
