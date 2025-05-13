@@ -229,6 +229,8 @@ public:
     std::pair<bptree_iterator, bool> insert(const tree_data_type& data);
     std::pair<bptree_iterator, bool> insert(tree_data_type&& data);
 
+    void split(bptree_node_base*, bptree_node_middle*);
+
     template <typename ...Args>
     std::pair<bptree_iterator, bool> emplace(Args&&... args);
 
@@ -255,6 +257,8 @@ public:
 
     // endregion modifiers declaration
 };
+
+
 
 template<std::input_iterator iterator, compator<typename std::iterator_traits<iterator>::value_type::first_type> compare = std::less<typename std::iterator_traits<iterator>::value_type::first_type>,
         std::size_t t = 5, typename U>
@@ -356,9 +360,9 @@ size_t BP_tree<tkey, tvalue, compare, t>::bptree_iterator::index() const noexcep
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
-BP_tree<tkey, tvalue, compare, t>::bptree_iterator::bptree_iterator(bptree_node_term *node, size_t index)
+BP_tree<tkey, tvalue, compare, t>::bptree_iterator::bptree_iterator(bptree_node_term *node, size_t index) : _index(index), _node(node)
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -453,7 +457,119 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::insert(
     const tree_data_type &data)
 {
+    size_t index_of_node_in_parent_node = 0;
 
+    BP_tree<tkey, tvalue, compare, t>::bptree_node_base *node = _root;
+    BP_tree<tkey, tvalue, compare, t>::bptree_node_base *parent_node = nullptr;
+    auto cur_pointer = _root;
+    std::stack<std::pair<bptree_node_base*, size_t>> path = std::stack<std::pair<bptree_node_base*, size_t>>();
+    if (_root == nullptr){
+        _root = _allocator.template new_object<BP_tree<tkey, tvalue, compare, t>::bptree_node_term>();
+        auto root_casted = static_cast<BP_tree<tkey, tvalue, compare, t>::bptree_node_term*>(_root);
+        root_casted->_next = nullptr;
+        root_casted->_data.push_back(data);
+    } else {
+        size_t i = 0;
+        while(cur_pointer != nullptr && !cur_pointer->_is_terminate){
+            i = 0;
+            index_of_node_in_parent_node = 0;
+            auto cur_pointer_casted = static_cast<BP_tree<tkey, tvalue, compare, t>::bptree_node_middle*>(cur_pointer);
+            for (; i < cur_pointer_casted->_keys.size() &&
+                   compare_keys(cur_pointer_casted->_keys[i], data.first); index_of_node_in_parent_node = i++) {}
+
+            auto cur_key = cur_pointer_casted->_keys[index_of_node_in_parent_node];
+
+            if (cur_key == data.first) {
+                // уже есть в дереве
+                return std::pair<BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool>(end(), false);
+            }
+
+            parent_node = node;
+            node = cur_pointer_casted;
+
+            if (i < cur_pointer_casted->_pointers.size()) {
+                cur_pointer = cur_pointer_casted->_pointers[i];
+            } else {
+                cur_pointer = nullptr;
+            }
+            path.push(std::pair(node, index_of_node_in_parent_node));
+        }
+
+        auto pointer_terminate = static_cast<bptree_node_term*>(cur_pointer);
+        for (i = 0; i < pointer_terminate->_data.size() && compare_keys(pointer_terminate->_data[i].first, data.first); i++) {}
+
+        auto node_casted = static_cast<bptree_node_term*>(node);
+        if (node_casted->_data.size() == maximum_keys_in_node){
+            node_casted->_data.insert(node_casted->_data.begin() + i, data);
+            split(node, static_cast<bptree_node_middle*>(parent_node));
+//            node->_pointers.insert(node->_d.begin() + i, nullptr);
+//            while (node != nullptr && node->_data.size() > maximum_keys_in_node) {
+//                split(node, parent_node);
+//                node = parent_node;
+//                parent_node = path.empty() ? nullptr : path.top().first;
+//                if (!path.empty()){
+//                    path.pop();
+//                }
+//            }
+        } else {
+            node_casted->_data.insert(node_casted->_data.begin() + i, data);
+//            node->_pointers.insert(node->_pointers.begin() + i, nullptr);
+        }
+    }
+    _size++;
+    return std::pair(bptree_iterator(), true);
+}
+
+template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
+void BP_tree<tkey, tvalue, compare, t>::split(BP_tree::bptree_node_base * node_to_split_base, BP_tree::bptree_node_middle * parent_node) {
+    size_t middle_ind = (maximum_keys_in_node+1) / 2;
+    auto node_to_split = static_cast<bptree_node_term*>(node_to_split_base);
+    tkey middle_key = node_to_split->_data[middle_ind].first;
+    size_t split_index_in_parent;
+    if (parent_node == nullptr) {
+        //если сплитим корень, то нужно создать новый
+        _root = _allocator.template new_object<bptree_node_middle>();
+        parent_node = static_cast<bptree_node_middle*>(_root);
+        split_index_in_parent = 0;
+    } else {
+        size_t i;
+        for(i = 0; i < parent_node->_keys.size(); i++){
+            if (!compare_keys(parent_node->_keys[i], middle_key)){
+                break;
+            }
+        }
+        split_index_in_parent = i;
+    }
+    bptree_node_term * left_part = _allocator.template new_object<bptree_node_term>();
+    bptree_node_term * right_part = _allocator.template new_object<bptree_node_term>();
+    if (left_part == nullptr || right_part == nullptr){
+        if (left_part != nullptr){
+            _allocator.template delete_object<bptree_node_term >(left_part);
+        }
+        if (right_part != nullptr){
+            _allocator.template delete_object<bptree_node_term >(right_part);
+        }
+    }
+
+    const auto it_keys_begin = node_to_split->_data.begin();
+    const auto it_keys_end = node_to_split->_data.end();
+//    const auto it_point_begin = node_to_split->_pointers.begin();
+//    const auto it_point_end = node_to_split->_pointers.end();
+
+    left_part->_data.insert(left_part->_data.begin(), it_keys_begin, it_keys_begin + middle_ind);
+//    left_part->_pointers.insert(left_part->_pointers.begin(), it_point_begin, it_point_begin + middle_ind);
+
+    right_part->_data.insert(right_part->_data.begin(), it_keys_begin + middle_ind + 1, it_keys_end);
+//    right_part->_pointers.insert(right_part->_pointers.begin(), it_point_begin + middle_ind + 1, it_point_end);
+    left_part->_next = right_part;
+    right_part->_next = node_to_split->_next;
+    parent_node->_keys.insert(parent_node->_keys.begin() + split_index_in_parent, node_to_split->_data[middle_ind].first);
+    parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent, left_part);
+    parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent + 1, right_part);
+
+    for(size_t i = parent_node->_keys.size() + 1; i < parent_node->_pointers.size(); i++){
+        parent_node->_pointers[i] = nullptr;
+    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -623,14 +739,14 @@ void BP_tree<tkey, tvalue, compare, t>::clear() noexcept
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::insert(tree_data_type&& data)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::insert(tree_data_type&& data)", "your code should be here...");
+    return insert(data);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 template <typename ...Args>
 std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::emplace(Args&&... args)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> template <typename ...Args> std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::emplace(Args&&... args)", "your code should be here...");
+    return this->insert(tree_data_type(args ...));
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -642,7 +758,7 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::insert_or_assign(tree_data_type&& data)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::insert_or_assign(tree_data_type&& data)", "your code should be here...");
+    return insert(data);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
