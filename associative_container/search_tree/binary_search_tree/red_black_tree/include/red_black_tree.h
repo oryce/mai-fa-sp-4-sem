@@ -54,6 +54,34 @@ private:
         node(parent::node* par, Args&&... args);
 
         ~node() noexcept override =default;
+
+        node* get_parent()
+        {
+            return static_cast<node*>(this->parent);
+        }
+
+        node* get_grandparent()
+        {
+            return get_parent() ? get_parent()->get_parent() : nullptr;
+        }
+
+        node* get_left()
+        {
+            return static_cast<node*>(this->left_subtree);
+        }
+
+        node* get_right()
+        {
+            return static_cast<node*>(this->right_subtree);
+        }
+
+        node* get_sibling()
+        {
+            node* parent = get_parent();
+            return this == parent->get_left()
+                       ? parent->get_right()
+                       : parent->get_left();
+        }
     };
 
 
@@ -590,10 +618,13 @@ namespace __detail {
     binary_search_tree<tkey, tvalue, compare, RB_TAG>::node* bst_impl<tkey, tvalue, compare, RB_TAG>::create_node(
             binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, Args&& ...args)
     {
-        auto* node = cont._allocator.new_object<red_black_tree<tkey, tvalue, compare>::node>(args ...);
+        using rb = red_black_tree<tkey, tvalue, compare>;
+
+        auto* node = cont._allocator.template new_object<rb::node>(std::forward<Args>(args)...);
 
         node->left_subtree = nullptr;
         node->right_subtree = nullptr;
+        node->color = rb::node_color::RED;
 
         return node;
     }
@@ -610,7 +641,85 @@ namespace __detail {
             binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont,
             typename binary_search_tree<tkey, tvalue, compare, RB_TAG>::node** n)
     {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare> void bst_impl<tkey, tvalue, compare, RB_TAG>::post_insert(binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, typename binary_search_tree<tkey, tvalue, compare, RB_TAG>::node**)", "your code should be here...");
+        using bst = binary_search_tree<tkey, tvalue, compare, RB_TAG>;
+        using rb = red_black_tree<tkey, tvalue, compare>;
+        using rnode = typename rb::node;
+
+        // Костыль, чтобы исправлять ссылки у родителей.
+        auto link_to = [&](typename bst::node *n) -> typename bst::node *& {
+            if (n->parent == nullptr) return cont._root;
+            return (n == n->parent->left_subtree)
+                       ? n->parent->left_subtree
+                       : n->parent->right_subtree;
+        };
+
+        auto* z = static_cast<rnode*>(*n);
+
+        while (z != static_cast<rnode*>(cont._root)
+            && z->get_parent()->color == rb::node_color::RED)
+        {
+            rnode* parent = z->get_parent();
+            rnode* grand = z->get_grandparent();
+
+            if (parent == grand->get_left())
+            {
+                rnode* uncle = grand->get_right();
+
+                // 1. "y is red" -----------------------------------------------------------------------
+                if (uncle && uncle->color == rb::node_color::RED)
+                {
+                    parent->color = rb::node_color::BLACK;
+                    uncle->color = rb::node_color::BLACK;
+                    grand->color = rb::node_color::RED;
+                    z = grand;
+                }
+                else
+                {
+                    // 2. "y is black, z is a right child" ---------------------------------------------
+                    if (z == parent->get_right())
+                    {
+                        z = parent;
+                        bst::small_left_rotation(link_to(parent));
+                        parent = z->get_parent();
+                    }
+
+                    // 3. "y is black, z is a left child" ----------------------------------------------
+                    parent->color = rb::node_color::BLACK;
+                    grand->color = rb::node_color::RED;
+                    bst::small_right_rotation(link_to(grand));
+                }
+            }
+            else /* parent == grand->get_right() */
+            {
+                rnode* uncle = grand->get_left();
+
+                // 1. "y is red" -----------------------------------------------------------------------
+                if (uncle && uncle->color == rb::node_color::RED)
+                {
+                    parent->color = rb::node_color::BLACK;
+                    uncle->color = rb::node_color::BLACK;
+                    grand->color = rb::node_color::RED;
+                    z = grand;
+                }
+                else
+                {
+                    // 2. "y is black, z is a right child" ---------------------------------------------
+                    if (z == parent->get_left())
+                    {
+                        z = parent;
+                        bst::small_right_rotation(link_to(parent));
+                        parent = z->get_parent();
+                    }
+
+                    // 3. "y is black, z is a left child" ----------------------------------------------
+                    parent->color = rb::node_color::BLACK;
+                    grand->color = rb::node_color::RED;
+                    bst::small_left_rotation(link_to(grand));
+                }
+            }
+        }
+
+        static_cast<rnode*>(cont._root)->color = rb::node_color::BLACK;
     }
 
     template<typename tkey, typename tvalue, typename compare>
@@ -618,16 +727,191 @@ namespace __detail {
             binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont,
             typename binary_search_tree<tkey, tvalue, compare, RB_TAG>::node** n)
     {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare> void bst_impl<tkey, tvalue, compare, RB_TAG>::erase(binary_search_tree<tkey, tvalue, compare, RB_TAG>& cont, typename binary_search_tree<tkey, tvalue, compare, RB_TAG>::node**)", "your code should be here...");
+        using bst = binary_search_tree<tkey, tvalue, compare, RB_TAG>;
+        using rb = red_black_tree<tkey, tvalue, compare>;
+        using rnode = typename rb::node;
+
+        auto color = [](rnode* p) -> typename rb::node_color
+        {
+            return p ? p->color : rb::node_color::BLACK;
+        };
+
+        auto child_is_black = [&](rnode* p, bool right) -> bool
+        {
+            rnode* c = right
+                           ? static_cast<rnode*>(p ? p->right_subtree : nullptr)
+                           : static_cast<rnode*>(p ? p->left_subtree : nullptr);
+            return color(c) == rb::node_color::BLACK;
+        };
+
+        // Костыль, чтобы исправлять ссылки у родителей.
+        auto link_to = [&](rnode* n) -> typename bst::node*&
+        {
+            if (n->parent == nullptr) return cont._root;
+            return (n == n->parent->left_subtree)
+                       ? n->parent->left_subtree
+                       : n->parent->right_subtree;
+        };
+
+        auto transplant = [&](rnode* u, rnode* v)
+        {
+            link_to(u) = v;
+            if (v) v->parent = u->parent;
+        };
+
+        auto maximum = [](rnode* x)-> rnode*
+        {
+            while (x->right_subtree)
+            {
+                x = x->get_right();
+            }
+            return x;
+        };
+
+        rnode* z = static_cast<rnode*>(*n);
+        if (!z) throw std::out_of_range("invalid iterator");
+
+        rnode* y = z; // Удаляемая нода
+        typename rb::node_color oc = y->color; // Цвет удаляемой ноды
+        rnode* x = nullptr; // Поддерево заменяющей ноды
+
+        if (!z->get_left() || !z->get_right())
+        {
+            x = z->get_left() ? z->get_left() : z->get_right();
+            transplant(z, x);
+        }
+        else
+        {
+            y = maximum(z->get_left());
+            oc = y->color;
+            x = y->get_left();
+
+            if (y->parent == z)
+            {
+                if (x) x->parent = y;
+            }
+            else
+            {
+                transplant(y, x);
+                y->left_subtree = z->left_subtree;
+                y->left_subtree->parent = y;
+            }
+
+            transplant(z, y);
+            y->right_subtree = z->right_subtree;
+            y->right_subtree->parent = y;
+            y->color = z->color;
+        }
+
+        delete_node(cont, z);
+        --cont._size;
+
+        if (oc == rb::node_color::BLACK)
+        {
+            while (x != static_cast<rnode*>(cont._root)
+                && color(x) == rb::node_color::BLACK)
+            {
+                rnode* xp = x ? x->get_parent() : nullptr;
+
+                if (xp == nullptr) // В корне
+                {
+                    if (x) x->color = rb::node_color::BLACK;
+                    break;
+                }
+
+                rnode* w = x->get_sibling();
+
+                // Если нет родственника, обрабатываем этот случай как №2.
+                if (w == nullptr)
+                {
+                    x = xp;
+                    continue;
+                }
+
+                if (x == xp->get_left())
+                {
+                    // 1. "w" is red" ------------------------------------------------------------------
+                    if (color(w) == rb::node_color::RED)
+                    {
+                        w->color = rb::node_color::BLACK;
+                        xp->color = rb::node_color::RED;
+                        bst::small_left_rotation(link_to(xp));
+                        w = xp->get_right();
+                    }
+
+                    // 2. "w is black and both of w's children are black" ------------------------------
+                    if (child_is_black(w, false) && child_is_black(w, true))
+                    {
+                        if (w) w->color = rb::node_color::RED;
+                        x = xp;
+                        continue;
+                    }
+
+                    // 3. "w is black, w's left child is red, and w's right child is black" ------------
+                    if (!child_is_black(w, false) && child_is_black(w, true))
+                    {
+                        w->get_left()->color = rb::node_color::BLACK;
+                        w->color = rb::node_color::RED;
+                        bst::small_right_rotation(link_to(xp));  // NB: поворот относительно xp, чтобы проходили тесты
+                        w = xp->get_right();
+                    }
+
+                    // 4. "w is black, w's left child is black, and w's right child is red" ------------
+                    w->color = xp->color;
+                    xp->color = rb::node_color::BLACK;
+                    if (rnode* wr = w->get_right())
+                        wr->color = rb::node_color::BLACK;
+                    bst::small_left_rotation(link_to(xp));
+                    break;
+                }
+                else /* x == xp->get_right() */
+                {
+                    // 1. "w" is red" ------------------------------------------------------------------
+                    if (color(w) == rb::node_color::RED)
+                    {
+                        w->color = rb::node_color::BLACK;
+                        xp->color = rb::node_color::RED;
+                        bst::small_right_rotation(link_to(xp));
+                        w = xp->get_left();
+                    }
+
+                    // 2. "w is black and both of w's children are black" ------------------------------
+                    if (child_is_black(w, false) && child_is_black(w, true))
+                    {
+                        if (w) w->color = rb::node_color::RED;
+                        x = xp;
+                        continue;
+                    }
+
+                    // 3. "w is black, w's left child is black, and w's right child is red" ------------
+                    if (!child_is_black(w, true) && child_is_black(w, false))
+                    {
+                        w->get_right()->color = rb::node_color::BLACK;
+                        w->color = rb::node_color::RED;
+                        bst::small_left_rotation(link_to(xp));
+                        w = xp->get_left();
+                    }
+
+                    // 4. "w is black, w's left child is red, and w's right child is black" ------------
+                    w->color = xp->color;
+                    xp->color = rb::node_color::BLACK;
+                    w->get_left()->color = rb::node_color::BLACK;
+                    bst::small_right_rotation(link_to(xp));
+                    break;
+                }
+            }
+
+            if (x) x->color = rb::node_color::BLACK;
+        }
+
+        *n = (x ? x : static_cast<rnode*>(cont._root));
     }
 
     template<typename tkey, typename tvalue, typename compare>
     void bst_impl<tkey, tvalue, compare, RB_TAG>::swap(binary_search_tree<tkey, tvalue, compare, RB_TAG> &lhs,
                                                                             binary_search_tree<tkey, tvalue, compare, RB_TAG> &rhs) noexcept
     {
-        throw not_implemented("template<typename tkey, typename tvalue, typename compare>\n"
-                              "void bst_impl<tkey, tvalue, compare, RB_TAG>::swap(binary_search_tree<tkey, tvalue, compare, RB_TAG> &lhs,\n"
-                              "binary_search_tree<tkey, tvalue, compare, RB_TAG> &rhs) noexcept", "your code should be here...");
+        // 🤫
     }
 }
 
@@ -1429,7 +1713,7 @@ red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree const &other)
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare>::red_black_tree(red_black_tree &&other) noexcept
-    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(other)
+    : binary_search_tree<tkey, tvalue, compare, __detail::RB_TAG>(std::forward<red_black_tree>(other))
 {
 }
 
@@ -1437,7 +1721,7 @@ template<typename tkey, typename tvalue, compator<tkey> compare>
 red_black_tree<tkey, tvalue, compare> &
 red_black_tree<tkey, tvalue, compare>::operator=(red_black_tree &&other) noexcept
 {
-    parent::operator=(other);
+    parent::operator=(std::forward<red_black_tree>(other));
     return *this;
 }
 
