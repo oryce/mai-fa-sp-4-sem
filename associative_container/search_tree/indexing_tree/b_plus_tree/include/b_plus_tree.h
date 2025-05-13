@@ -44,22 +44,12 @@ private:
     struct bptree_node_term : public bptree_node_base
     {
         bptree_node_term* _next;
-//        std::vector<tree_data_type, pp_allocator<tree_data_type>> _data;
-//
-//        bptree_node_term(pp_allocator<tree_data_type> al);
-
         boost::container::static_vector<tree_data_type, maximum_keys_in_node + 1> _data;
         bptree_node_term() noexcept;
     };
 
     struct bptree_node_middle : public bptree_node_base
     {
-//        std::vector<tkey, pp_allocator<tkey>> _keys;
-//        std::vector<bptree_node_base*, pp_allocator<bptree_node_base*>> _pointers;
-//
-//        bptree_node_middle(pp_allocator<tkey> al);
-
-
         boost::container::static_vector<tkey, maximum_keys_in_node + 1> _keys;
         boost::container::static_vector<bptree_node_base*, maximum_keys_in_node + 2> _pointers;
         bptree_node_middle() noexcept;
@@ -285,32 +275,32 @@ bool BP_tree<tkey, tvalue, compare, t>::compare_pairs(const BP_tree::tree_data_t
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 BP_tree<tkey, tvalue, compare, t>::bptree_node_base::bptree_node_base() noexcept
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
-BP_tree<tkey, tvalue, compare, t>::bptree_node_term::bptree_node_term() noexcept
+BP_tree<tkey, tvalue, compare, t>::bptree_node_term::bptree_node_term() noexcept : _next(nullptr), _data()
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+    bptree_node_base::_is_terminate = true;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
-BP_tree<tkey, tvalue, compare, t>::bptree_node_middle::bptree_node_middle() noexcept
+BP_tree<tkey, tvalue, compare, t>::bptree_node_middle::bptree_node_middle() noexcept : _keys(), _pointers()
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+    bptree_node_base::_is_terminate = true;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 logger * BP_tree<tkey, tvalue, compare, t>::get_logger() const noexcept
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+    return _logger;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 pp_allocator<typename BP_tree<tkey, tvalue, compare, t>::value_type> BP_tree<tkey, tvalue, compare, t>::
 get_allocator() const noexcept
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+    return _allocator;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -463,7 +453,7 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_tree<tkey, tvalue, compare, t>::insert(
     const tree_data_type &data)
 {
-    throw not_implemented("too laazyy", "your code should be here...");
+
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -476,13 +466,19 @@ bool BP_tree<tkey, tvalue, compare, t>::compare_keys(const tkey &lhs, const tkey
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 BP_tree<tkey, tvalue, compare, t>::BP_tree(const compare& cmp, pp_allocator<value_type> alloc, logger* logger)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> BP_tree<tkey, tvalue, compare, t>::BP_tree(const compare& cmp, pp_allocator<value_type> alloc, logger* logger)", "your code should be here...");
+    _allocator = alloc;
+    _logger = logger;
+    _root = nullptr;
+    _size = 0;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 BP_tree<tkey, tvalue, compare, t>::BP_tree(pp_allocator<value_type> alloc, const compare& cmp, logger* logger)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> BP_tree<tkey, tvalue, compare, t>::BP_tree(pp_allocator<value_type> alloc, const compare& cmp, logger* logger)", "your code should be here...");
+    _allocator = alloc;
+    _logger = logger;
+    _root = nullptr;
+    _size = 0;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -573,7 +569,7 @@ size_t BP_tree<tkey, tvalue, compare, t>::size() const noexcept
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 bool BP_tree<tkey, tvalue, compare, t>::empty() const noexcept
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> bool BP_tree<tkey, tvalue, compare, t>::empty() const noexcept", "your code should be here...");
+    return _size;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
