@@ -703,7 +703,7 @@ namespace __detail {
                 }
                 else
                 {
-                    // 2. "y is black, z is a right child" ---------------------------------------------
+                    // 2. "y is black, z is a left child" ----------------------------------------------
                     if (z == parent->get_left())
                     {
                         z = parent;
@@ -711,7 +711,7 @@ namespace __detail {
                         parent = z->get_parent();
                     }
 
-                    // 3. "y is black, z is a left child" ----------------------------------------------
+                    // 3. "y is black, z is a right child" ---------------------------------------------
                     parent->color = rb::node_color::BLACK;
                     grand->color = rb::node_color::RED;
                     bst::small_left_rotation(link_to(grand));
@@ -852,7 +852,7 @@ namespace __detail {
                     {
                         w->get_left()->color = rb::node_color::BLACK;
                         w->color = rb::node_color::RED;
-                        bst::small_right_rotation(link_to(xp));  // NB: поворот относительно xp, чтобы проходили тесты
+                        bst::small_right_rotation(link_to(w));
                         w = xp->get_right();
                     }
 
