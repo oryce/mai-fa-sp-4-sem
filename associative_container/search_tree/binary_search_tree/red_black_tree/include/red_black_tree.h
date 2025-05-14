@@ -620,7 +620,7 @@ namespace __detail {
     {
         using rb = red_black_tree<tkey, tvalue, compare>;
 
-        auto* node = cont._allocator.template new_object<rb::node>(std::forward<Args>(args)...);
+        auto* node = cont._allocator.template new_object<typename rb::node>(std::forward<Args>(args)...);
 
         node->left_subtree = nullptr;
         node->right_subtree = nullptr;
@@ -1774,7 +1774,7 @@ template<class ...Args>
 typename red_black_tree<tkey, tvalue, compare>::infix_iterator
 red_black_tree<tkey, tvalue, compare>::emplace_or_assign(Args&&... args)
 {
-    return parent::emplace_or_assign(args);
+    return parent::emplace_or_assign(std::forward<Args>(args)...);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare>
