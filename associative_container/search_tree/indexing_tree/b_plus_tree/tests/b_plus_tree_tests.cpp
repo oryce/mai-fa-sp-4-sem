@@ -556,12 +556,18 @@ TEST(bTreePositiveTests, test9)
 
     std::vector<BP_tree<int, std::string>::value_type> expected_result =
             {
-                    { 4, "e" },
-                    { 15, "c" },
-                    { 24, "g" },
-                    { 45, "k" },
-                    { 100, "f" },
-                    { 101, "j" },
+                    {1,   "a"},
+                    {2,   "b"},
+                    {3,   "d"},
+                    {4,   "e"},
+                    {15,  "c"},
+                    {24,  "g"},
+                    {45,  "k"},
+                    {100, "f"},
+                    {101, "j"},
+                    {193, "l"},
+                    {456, "h"},
+                    {534, "m"}
             };
 
     BP_tree<int, std::string, std::less<int>, 5> tree(std::less<int>(), nullptr, logger.get());
