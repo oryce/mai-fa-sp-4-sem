@@ -110,7 +110,7 @@ bool infix_const_iterator_test(
 return true;
 }
 
-TEST(bTreePositiveTests, test0)
+TEST(bpTreePositiveTests, test0)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
@@ -157,21 +157,27 @@ TEST(bpTreePositiveTests, test1)
     tree.emplace(15, std::string("c"));
     tree.emplace(3, std::string("d"));
     tree.emplace(4, std::string("e"));
+    auto it = tree.cbegin();
+    while(it != tree.cend()){
+        auto kv = *it;
+        it++;
+    }
     tree.emplace(27, std::string("f"));
+
 
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
     logger->trace("bTreePositiveTests.test1 finished");
 }
 
-TEST(bTreePositiveTests, test2)
+TEST(bpTreePositiveTests, test2)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
                                                                   { "b_tree_tests_logs.txt", logger::severity::trace }
                                                           }));
 
-    logger->trace("bTreePositiveTests.test2 started");
+    logger->trace("bpTreePositiveTests.test2 started");
 
     std::vector<test_data<int, std::string>> expected_result =
             {
@@ -206,17 +212,17 @@ TEST(bTreePositiveTests, test2)
 
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
-    logger->trace("bTreePositiveTests.test2 finished");
+    logger->trace("bpTreePositiveTests.test2 finished");
 }
 
-TEST(bTreePositiveTests, test3)
+TEST(bpTreePositiveTests, test3)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
                                                                   { "b_tree_tests_logs.txt", logger::severity::trace }
                                                           }));
 
-    logger->trace("bTreePositiveTests.test3 started");
+    logger->trace("bpTreePositiveTests.test3 started");
 
     std::vector<test_data<int, std::string>> expected_result =
             {
@@ -251,17 +257,17 @@ TEST(bTreePositiveTests, test3)
 
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
-    logger->trace("bTreePositiveTests.test3 finished");
+    logger->trace("bpTreePositiveTests.test3 finished");
 }
 
-TEST(bTreePositiveTests, test4)
+TEST(bpTreePositiveTests, test4)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
                                                                   { "b_tree_tests_logs.txt", logger::severity::trace }
                                                           }));
 
-    logger->trace("bTreePositiveTests.test4 started");
+    logger->trace("bpTreePositiveTests.test4 started");
 
     std::vector<test_data<int, std::string>> expected_result =
             {
@@ -296,10 +302,10 @@ TEST(bTreePositiveTests, test4)
 
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
-    logger->trace("bTreePositiveTests.test4 finished");
+    logger->trace("bpTreePositiveTests.test4 finished");
 }
 
-TEST(bTreePositiveTests, test5)
+TEST(bpTreePositiveTests, test5)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
@@ -332,7 +338,7 @@ TEST(bTreePositiveTests, test5)
     logger->trace("bTreePositiveTests.test5 finished");
 }
 
-TEST(bTreePositiveTests, test6)
+TEST(bpTreePositiveTests, test6)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
