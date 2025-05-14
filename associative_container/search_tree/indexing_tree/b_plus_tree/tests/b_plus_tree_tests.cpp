@@ -365,64 +365,17 @@ TEST(bpTreePositiveTests, test6)
     tree.emplace(100, std::string("f"));
     tree.emplace(24, std::string("g"));
     tree.emplace(456, std::string("h"));
-    {
-        auto end_infix = tree.cend();
-        auto it = tree.cbegin();
-
-        while (it != end_infix) {
-            auto data = *it;
-
-            auto ind = it.index();
-            std::cout << data.first << " " << ind << "\n";
-            if (it == end_infix) {
-                std::cout << "";
-            }
-            ++it;
-        }
-    }
     tree.emplace(101, std::string("j"));
     tree.emplace(45, std::string("k"));
     tree.emplace(193, std::string("l"));
-    {
-        auto end_infix = tree.cend();
-        auto it = tree.cbegin();
-
-        while (it != end_infix) {
-            auto data = *it;
-
-            auto ind = it.index();
-            std::cout << data.first << " " << ind << "\n";
-            if (data.first == 534) {
-                std::cout << "";
-            }
-            ++it;
-        }
-    }
     tree.emplace(534, std::string("m"));
-//    tree.erase(1);
-
-
-    auto end_infix = tree.cend();
-    auto it = tree.cbegin();
-
-    while(it != end_infix)
-    {
-        auto data = *it;
-
-        auto ind = it.index();
-        std::cout << data.first << " " << ind << "\n";
-        if (data.first == 534){
-            std::cout << "";
-        }
-        ++it;
-    }
 
     auto first_disposed = std::move(tree.at(1));
     auto second_disposed = std::move(tree.at(100));
     auto third_disposed = std::move(tree.at(193));
     auto fourth_disposed = std::move(tree.at(24));
 
-
+    tree.erase(1);
     tree.erase(100);
     tree.erase(193);
     tree.erase(24);

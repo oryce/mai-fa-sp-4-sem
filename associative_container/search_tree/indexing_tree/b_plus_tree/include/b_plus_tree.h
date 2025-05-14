@@ -257,9 +257,14 @@ public:
 
     bptree_iterator erase(const tkey& key);
     void delete_key_from_leaf(size_t, bptree_node_term*, std::stack<std::pair<bptree_node_base*, size_t>>);
+    void merge(bptree_node_base*, bptree_node_base*, bptree_node_middle*, size_t);
+    void merge_terminate(bptree_node_term*, bptree_node_term*, bptree_node_middle*, size_t);
+    void merge_middle(bptree_node_middle*, bptree_node_middle*, bptree_node_middle*, size_t);
 
     // endregion modifiers declaration
 };
+
+
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 size_t BP_tree<tkey, tvalue, compare, t>::bptree_node_base::size() {
@@ -826,7 +831,7 @@ size_t BP_tree<tkey, tvalue, compare, t>::size() const noexcept
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 bool BP_tree<tkey, tvalue, compare, t>::empty() const noexcept
 {
-    return _size;
+    return _size == 0;
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -900,6 +905,9 @@ bool BP_tree<tkey, tvalue, compare, t>::contains(const tkey& key) const
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void BP_tree<tkey, tvalue, compare, t>::clear() noexcept
 {
+    while(!empty()){
+        erase(begin());
+    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -937,13 +945,13 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::erase(bptree_iterator pos)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::erase(bptree_iterator pos)", "your code should be here...");
+    return erase(pos->first);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::erase(bptree_const_iterator pos)
 {
-    throw not_implemented("template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t> typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::erase(bptree_const_iterator pos)", "your code should be here...");
+    return erase(pos->first);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -972,9 +980,9 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
     bool found = false;
     //находим нужный ключ
     while(!cur_node->_is_terminate){
-        index = 0;
+
         auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
-        for(; index < cur_node_casted->_keys.size() && compare_keys(cur_node_casted->_keys[index], key); index++){}
+        for(index = 0; index < cur_node_casted->_keys.size() && compare_keys(cur_node_casted->_keys[index], key); index++){}
         st.push(std::pair(cur_node, prev_index));
         if (index < cur_node_casted->_keys.size() && cur_node_casted->_keys[index] == key){
             found = true;
@@ -989,14 +997,18 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
         prev_index = index;
     }
 
-    if (!found){
+    st.push(std::pair(cur_node, prev_index));
+    auto cur_node_casted = static_cast<bptree_node_term*>(cur_node);
+    for(index = 0; index < cur_node_casted->_data.size() && cur_node_casted->_data[index].first != key; index++){}
+
+    if (index == cur_node_casted->_data.size()){
         return end();
     }
 
 
 
     delete_key_from_leaf(index, static_cast<bptree_node_term*>(cur_node), st);
-
+    _size--;
     return bptree_iterator();
 }
 
@@ -1036,8 +1048,8 @@ void BP_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key
         size_right_sibling = parent->_pointers[i + 1]->size();
     }
 
-    bptree_node_term* left_sibling = static_cast<bptree_node_term*>(parent->_pointers[i - 1]);
-    bptree_node_term* right_sibling = static_cast<bptree_node_term*>(parent->_pointers[i + 1]);
+    bptree_node_term* left_sibling = i > 0 ? static_cast<bptree_node_term*>(parent->_pointers[i - 1]) : nullptr;
+    bptree_node_term* right_sibling = i + 1 < parent->_pointers.size() ? static_cast<bptree_node_term*>(parent->_pointers[i + 1]) : nullptr;
     if (size_left_sibling > minimum_keys_in_node) {
         node->_data.erase(node->_data.begin() + index_of_key);
 
@@ -1049,65 +1061,136 @@ void BP_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key
     } else if (size_right_sibling > minimum_keys_in_node) {
         node->_data.erase(node->_data.begin() + index_of_key);
 
-        node->_data.insert(node->_data.begin(), right_sibling->_data[0]);
+        node->_data.insert(node->_data.end(), right_sibling->_data[0]);
 
-        parent->_keys[i + 1] = right_sibling->_data[0].first;
+        parent->_keys[i] = right_sibling->_data[1].first;
 
         right_sibling->_data.erase(right_sibling->_data.begin());
     } else {
-//        node->_data.erase(node->_data.begin() + index_of_key);
-//
-//        if (size_left_sibling > 0) {
-//            merge(parent->_pointers[i - 1], cur_node, parent, i - 1);
-//        } else if (size_right_sibling > 0) {
-//            merge(cur_node, parent->_pointers[i + 1], parent, i);
-//        }
-//        st.pop();
-//
-//        //Если после мержа в родителе осталось сликшом мало ключей, продолжаем мержить
-//        while(!st.empty() && parent->_keys.size() < minimum_keys_in_node){
-//            cur_node = parent;
-//            parent = st.top().first;
-//            i = st.top().second;
-//            st.pop();
-//
-//            if (i > 0 && parent->_pointers[i - 1] != nullptr) {
-//                size_left_sibling = parent->_pointers[i - 1]->_keys.size();
-//            }
-//
-//            if (i + 1 < parent->_pointers.size() && parent->_pointers[i + 1] != nullptr) {
-//                size_right_sibling = parent->_pointers[i + 1]->_keys.size();
-//            }
-//
-//            if (size_left_sibling > 0) {
-//                merge(parent->_pointers[i - 1], cur_node, parent, i - 1);
-//            } else if (size_right_sibling > 0) {
-//                merge(cur_node, parent->_pointers[i + 1], parent, i);
-//            } else {
-//                throw std::logic_error("no siblings to merge");
-//            }
-//        }
-//
-//        //parent = _root, так как мы поднимаемся до самого верха
-//        // если вдруг в корне осталось 0 ключей, заменяем его
-//        if (parent->_keys.size() == 0){
-//            if (parent->_pointers.size() > 0) {
-//                if (parent->_pointers[0] != nullptr) {
-//                    _root = parent->_pointers[0];
-//                } else {
-//                    if (parent->_pointers.size() > 1) {
-//                        _root = parent->_pointers[1];
-//                    } else {
-//                        _root = nullptr;
-//                    }
-//                }
-//            } else {
-//                _root = nullptr;
-//            }
-//            _allocator.delete_object(parent);
-//        }
+        node->_data.erase(node->_data.begin() + index_of_key);
+
+        if (size_left_sibling > 0) {
+            merge(left_sibling, cur_node, parent, i - 1);
+        } else if (size_right_sibling > 0) {
+            merge(cur_node, right_sibling, parent, i);
+        }
+        st.pop();
+
+        //Если после мержа в родителе осталось сликшом мало ключей, продолжаем мержить
+        while(!st.empty() && parent->_keys.size() < minimum_keys_in_node){
+            cur_node = parent;
+            parent = static_cast<bptree_node_middle*>(st.top().first);
+            auto left_sibling_m = static_cast<bptree_node_middle*>(parent->_pointers[i - 1]);
+            auto right_sibling_m = static_cast<bptree_node_middle*>(parent->_pointers[i + 1]);
+            i = st.top().second;
+            st.pop();
+
+            if (i > 0 && left_sibling_m != nullptr) {
+                size_left_sibling = left_sibling_m->_keys.size();
+            }
+
+            if (i + 1 < parent->_pointers.size() && right_sibling_m != nullptr) {
+                size_right_sibling = right_sibling_m->_keys.size();
+            }
+
+            if (size_left_sibling > 0) {
+                merge(left_sibling_m, cur_node, parent, i - 1);
+            } else if (size_right_sibling > 0) {
+                merge(cur_node, right_sibling_m, parent, i);
+            } else {
+                throw std::logic_error("no siblings to merge");
+            }
+        }
+
+        //parent = _root, так как мы поднимаемся до самого верха
+        // если вдруг в корне осталось 0 ключей, заменяем его
+        if (parent->_keys.size() == 0){
+            if (parent->_pointers.size() > 0) {
+                if (parent->_pointers[0] != nullptr) {
+                    _root = parent->_pointers[0];
+                } else {
+                    if (parent->_pointers.size() > 1) {
+                        _root = parent->_pointers[1];
+                    } else {
+                        _root = nullptr;
+                    }
+                }
+            } else {
+                _root = nullptr;
+            }
+            _allocator.delete_object(parent);
+        }
     }
 }
 
+template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
+void BP_tree<tkey, tvalue, compare, t>::merge(BP_tree::bptree_node_base * left, BP_tree::bptree_node_base * right,
+                                              bptree_node_middle * parent, size_t split_key_index) {
+    if (left->_is_terminate){
+        merge_terminate(static_cast<bptree_node_term*>(left), static_cast<bptree_node_term*>(right), parent, split_key_index);
+    } else {
+        merge_middle(static_cast<bptree_node_middle*>(left), static_cast<bptree_node_middle*>(right), parent, split_key_index);
+    }
+}
+
+template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
+void
+BP_tree<tkey, tvalue, compare, t>::merge_terminate(BP_tree::bptree_node_term *left, BP_tree::bptree_node_term *right,
+                                                   BP_tree::bptree_node_middle *parent, size_t split_key_index) {
+    bptree_node_term *  new_node = _allocator.template new_object<bptree_node_term>();
+    new_node->_data = left->_data;
+
+    new_node->_data.insert(new_node->_data.end(), right->_data.begin(), right->_data.end());
+
+    parent->_keys.erase(parent->_keys.begin() + split_key_index);
+    parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
+
+    if (parent->_pointers.size() > split_key_index) {
+        parent->_pointers[split_key_index] = new_node;
+    } else {
+        parent->_pointers.push_back(new_node);
+    }
+
+    if (parent->_pointers.size() > split_key_index + 1) {
+        parent->_pointers[split_key_index+1] = nullptr;
+    } else {
+        parent->_pointers.push_back(nullptr);
+    }
+
+    _allocator.delete_object(left);
+    _allocator.delete_object(right);
+}
+
+
+template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
+void BP_tree<tkey, tvalue, compare, t>::merge_middle(BP_tree::bptree_node_middle * left, BP_tree::bptree_node_middle * right,
+                                                        bptree_node_middle * parent, size_t split_key_index) {
+    bptree_node_middle *  new_node = _allocator.template new_object<bptree_node_middle>();
+    new_node->_keys = left->_keys;
+    new_node->_pointers = left->_pointers;
+    new_node->_keys.push_back(parent->_keys[split_key_index]);
+    new_node->_pointers.push_back(nullptr);
+
+    new_node->_keys.insert(new_node->_keys.end(), right->_keys.begin(), right->_keys.end());
+    new_node->_pointers.insert(new_node->_pointers.end(), right->_pointers.begin(), right->_pointers.end());
+
+    parent->_keys.erase(parent->_keys.begin() + split_key_index);
+    parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
+
+    if (parent->_pointers.size() > split_key_index) {
+        parent->_pointers[split_key_index] = new_node;
+    } else {
+        parent->_pointers.push_back(new_node);
+    }
+
+    if (parent->_pointers.size() > split_key_index + 1) {
+        parent->_pointers[split_key_index+1] = nullptr;
+    } else {
+        parent->_pointers.push_back(nullptr);
+    }
+
+    _allocator.delete_object(left);
+    _allocator.delete_object(right);
+}
 
 #endif
