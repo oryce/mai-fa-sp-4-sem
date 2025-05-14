@@ -447,6 +447,14 @@ big_int &big_int::multiply_assign(const big_int &other, big_int::multiplication_
         optimise();
         return *this;
     }
+    if (rule == multiplication_rule::SchonhageStrassen) {
+        big_int result = multiply_schonhage_strassen(*this, other);
+        _digits = std::move(result._digits);
+        _sign = (_sign == other._sign);
+        optimise();
+        return *this;
+    }
+
     return *this;
 }
 
@@ -626,5 +634,161 @@ big_int multiply_karatsuba(const big_int &a, const big_int &b) {
     // (h1*Base + l1)(h2*Base +l2) = h1*h2*Base^2 + ((h1 + l1)(h2 + l2) - h1*h2 - l1*l2)*Base + l1*l2
     result._sign = (a._sign == b._sign);
     result.optimise();
+    return result;
+}
+
+// Schonhage-Strassen Multiplication Algorithm
+using ll = long long;
+
+// For all ai in vector Big_int number ai <= MOD, so I need translate vector to this base
+constexpr ll base = 998244353 - 1;
+
+/* MOD must have a structure (k * 2^m + 1) and it should be a prime number.
+ * MAXN <= 2^m
+ * since I use two modules, I need to take MAXN <= min(2^m1, 2^m2) where m1 and m2 they belong to different modules
+ * MAXN defines the maximum length of the numbers to be multiplied
+ * MAXN >= N + M - 1, where N, M length of the numbers */
+constexpr ll MAXN = (1 << 19);
+
+/* W - primitive root of the MAXN degree of 1: x^k = 1 % MOD
+ * IW - inverse modulo MOD to W
+ * INV2 - inverse modulo MOD to 2 */
+
+// MOD1 = 119 * 2^23 + 1
+constexpr ll MOD1 = 998244353, W1 = 805775211, IW1 = 46809892, INV21 = 499122177;
+//MOD2 = 504 * 2^22 + 1
+constexpr ll MOD2 = 2113929217, W2 = 1838344356, IW2 = 130030948, INV22 = 1056964609;
+
+/* pws[n] = W^(MAXN/n)
+ * ipws[n] = IW^(MAXN/n)
+ * They are used in the NTT algorithm to optimize calculations. */
+void init(ll *pws1, ll *ipws1, ll *pws2, ll *ipws2) {
+    pws1[MAXN] = W1;
+    ipws1[MAXN] = IW1;
+    for (int i = MAXN / 2; i >= 1; i /= 2) {
+        pws1[i] = (pws1[i * 2] * pws1[i * 2]) % MOD1;
+        ipws1[i] = (ipws1[i * 2] * ipws1[i * 2]) % MOD1;
+    }
+
+    pws2[MAXN] = W2;
+    ipws2[MAXN] = IW2;
+    for (int i = MAXN / 2; i >= 1; i /= 2) {
+        pws2[i] = (pws2[i * 2] * pws2[i * 2]) % MOD2;
+        ipws2[i] = (ipws2[i * 2] * ipws2[i * 2]) % MOD2;
+    }
+}
+
+
+// Cooley-Tukey algorithm to find NTT
+void fft(std::vector<ll> &a, std::vector<ll> &ans, int l, int cl, int step, int n, bool inv, ll MOD, ll *pws, ll *ipws,
+         ll INV2) {
+    if (n == 1) {
+        ans[l] = a[cl];
+        return;
+    }
+    fft(a, ans, l, cl, step * 2, n / 2, inv, MOD, pws, ipws, INV2); // for even
+    fft(a, ans, l + n / 2, cl + step, step * 2, n / 2, inv, MOD, pws, ipws, INV2); // for uneven
+    ll cw = 1; // Current multiplier
+    const ll gw = (inv ? ipws[n] : pws[n]); // Main multiplier for the current level
+    for (int i = l; i < l + n / 2; i++) {
+        const ll u = ans[i];
+        const ll v = (cw * ans[i + n / 2]) % MOD;
+        ans[i] = (u + v) % MOD;
+        ans[i + n / 2] = (u - v) % MOD;
+        if (ans[i + n / 2] < 0) ans[i + n / 2] += MOD;
+        if (inv) {
+            ans[i] = (ans[i] * INV2) % MOD;
+            ans[i + n / 2] = (ans[i + n / 2] * INV2) % MOD;
+        }
+        cw = (cw * gw) % MOD;
+    }
+}
+
+template<ll MOD, ll * pws, ll * ipws, ll INV2>
+std::vector<ll> poly_multiply(std::vector<ll>& a, std::vector<ll>& b, const size_t n) {
+    std::vector<ll> a_fft(n), b_fft(n);
+    fft(a, a_fft, 0, 0, 1, n, false, MOD, pws, ipws, INV2);
+    fft(b, b_fft, 0, 0, 1, n, false, MOD, pws, ipws, INV2);
+
+    std::vector<ll> product_fft(n);
+    for (size_t i = 0; i < n; ++i) {
+        product_fft[i] = (a_fft[i] * b_fft[i]) % MOD;
+    }
+
+    std::vector<ll> product(n);
+    fft(product_fft, product, 0, 0, 1, n, true, MOD, pws, ipws, INV2);
+    return product;
+}
+
+// Normalization is necessary, because after CRT, the numbers may be greater than base.
+void normalize(std::vector<ll>& product) {
+    ll carry = 0;
+    for (auto &x: product) {
+        x += carry;
+        carry = x / base;
+        x %= base;
+    }
+    while (carry) {
+        product.push_back(carry % base);
+        carry /= base;
+    }
+}
+
+// Chinese remainder theorem for 2 modules it reduces to solving a system of 2 equations
+ll crt(const ll a1, const ll a2) {
+    constexpr ll M = MOD1 * MOD2;
+    constexpr ll y1 = 210156705; // mod2^{-1} mod mod1
+    constexpr ll y2 = 1668891489; // mod1^{-1} mod mod2
+
+    const ll term1 = (static_cast<__int128_t>(a1) * MOD2 % M) * y1 % M;
+    const ll term2 = (static_cast<__int128_t>(a2) * MOD1 % M) * y2 % M;
+    return (term1 + term2) % M;
+}
+
+big_int multiply_schonhage_strassen(big_int first,big_int second) {
+    static ll pws1[MAXN + 1], ipws1[MAXN + 1];
+    static ll pws2[MAXN + 1], ipws2[MAXN + 1];
+    static bool initialized = false;
+    if (!initialized) {
+        init(pws1, ipws1, pws2, ipws2);
+        initialized = true;
+    }
+
+    std::vector<ll> normalize_first_digits;
+    std::vector<ll> normalize_second_digits;
+    while (first != 0) {
+        big_int div_res = first % base;
+        normalize_first_digits.push_back(div_res._digits[0]);
+        first /= base;
+    }
+    while (second != 0) {
+        big_int div_res = second % base;
+        normalize_second_digits.push_back(div_res._digits[0]);
+        second /= base;
+    }
+
+    // For Cooley-Tukey algorithm vectors must have length power of 2
+    size_t n = 1;
+    while (n < normalize_first_digits.size() + normalize_second_digits.size()) n <<= 1;
+    normalize_first_digits.resize(n, 0);
+    normalize_second_digits.resize(n, 0);
+
+    const auto res1 = poly_multiply<MOD1, pws1, ipws1, INV21>(normalize_first_digits, normalize_second_digits, n);
+    const auto res2 = poly_multiply<MOD2, pws2, ipws2, INV22>(normalize_first_digits, normalize_second_digits, n);
+
+    std::vector<ll> combined(res1.size());
+    for (size_t i = 0; i < combined.size(); ++i) {
+        combined[i] = crt(res1[i], res2[i]);
+    }
+    normalize(combined);
+
+    // Collect the result from the coefficients obtained from the CRT
+    big_int result = 0;
+    big_int pow = 1;
+    for (size_t i = 0; i < combined.size(); ++i) {
+        big_int tmp = combined[i];
+        result += tmp * pow;
+        pow *= base;
+    }
     return result;
 }
