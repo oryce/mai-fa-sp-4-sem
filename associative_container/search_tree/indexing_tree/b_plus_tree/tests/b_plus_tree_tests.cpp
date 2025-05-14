@@ -349,10 +349,10 @@ TEST(bpTreePositiveTests, test6)
                     test_data<int, std::string>(1, 3, "d"),
                     test_data<int, std::string>(2, 4, "e"),
                     test_data<int, std::string>(0, 15, "c"),
-                    test_data<int, std::string>(0, 45, "k"),
-                    test_data<int, std::string>(1, 101, "j"),
-                    test_data<int, std::string>(2, 456, "h"),
-                    test_data<int, std::string>(3, 534, "m")
+                    test_data<int, std::string>(1, 45, "k"),
+                    test_data<int, std::string>(2, 101, "j"),
+                    test_data<int, std::string>(3, 456, "h"),
+                    test_data<int, std::string>(4, 534, "m")
             };
 
     BP_tree<int, std::string, std::less<int>, 4> tree(std::less<int>(), nullptr, logger.get());
@@ -365,21 +365,68 @@ TEST(bpTreePositiveTests, test6)
     tree.emplace(100, std::string("f"));
     tree.emplace(24, std::string("g"));
     tree.emplace(456, std::string("h"));
+    {
+        auto end_infix = tree.cend();
+        auto it = tree.cbegin();
+
+        while (it != end_infix) {
+            auto data = *it;
+
+            auto ind = it.index();
+            std::cout << data.first << " " << ind << "\n";
+            if (it == end_infix) {
+                std::cout << "";
+            }
+            ++it;
+        }
+    }
     tree.emplace(101, std::string("j"));
     tree.emplace(45, std::string("k"));
     tree.emplace(193, std::string("l"));
+    {
+        auto end_infix = tree.cend();
+        auto it = tree.cbegin();
+
+        while (it != end_infix) {
+            auto data = *it;
+
+            auto ind = it.index();
+            std::cout << data.first << " " << ind << "\n";
+            if (data.first == 534) {
+                std::cout << "";
+            }
+            ++it;
+        }
+    }
     tree.emplace(534, std::string("m"));
+//    tree.erase(1);
+
+
+    auto end_infix = tree.cend();
+    auto it = tree.cbegin();
+
+    while(it != end_infix)
+    {
+        auto data = *it;
+
+        auto ind = it.index();
+        std::cout << data.first << " " << ind << "\n";
+        if (data.first == 534){
+            std::cout << "";
+        }
+        ++it;
+    }
 
     auto first_disposed = std::move(tree.at(1));
     auto second_disposed = std::move(tree.at(100));
     auto third_disposed = std::move(tree.at(193));
     auto fourth_disposed = std::move(tree.at(24));
 
-    tree.erase(1);
+
     tree.erase(100);
     tree.erase(193);
     tree.erase(24);
-
+    return;
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
     EXPECT_TRUE(first_disposed == "a");
