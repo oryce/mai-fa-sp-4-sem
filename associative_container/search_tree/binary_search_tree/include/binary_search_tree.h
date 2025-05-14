@@ -3479,7 +3479,7 @@ typename binary_search_tree<tkey, tvalue, compare, tag>::infix_iterator
 binary_search_tree<tkey, tvalue, compare, tag>::insert_or_assign(value_type &&value) {
     node *n = go_to_node_with_key(value->first);
     if (n == NULL) {
-        insert(std::forward(value));
+        insert(std::forward<value_type>(value));
     } else {
         n->data.second = value.second;
     }
