@@ -231,7 +231,7 @@ namespace __detail {
     bst_impl<tkey, tvalue, compare, SPL_TAG>::create_node(
             binary_search_tree<tkey, tvalue, compare, SPL_TAG> &cont,
             Args &&...args) {
-        typename binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node *n = cont._allocator.new_object<typename binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node>(
+        typename binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node *n = cont._allocator.template new_object<typename binary_search_tree<tkey, tvalue, compare, SPL_TAG>::node>(
                 args ...);
         return n;
     }
