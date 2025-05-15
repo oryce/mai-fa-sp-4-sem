@@ -40,6 +40,9 @@ private:
         bptree_node_base() noexcept;
         virtual ~bptree_node_base() =default;
         size_t size();
+
+//        //DEBUG
+//        volatile std::vector<std::pair<const tkey, tvalue>> get_key_values();
     };
 
     struct bptree_node_term : public bptree_node_base
@@ -264,6 +267,17 @@ public:
     // endregion modifiers declaration
 };
 
+//template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
+//volatile std::vector<std::pair<const tkey, tvalue>> BP_tree<tkey, tvalue, compare, t>::bptree_node_base::get_key_values() {
+//    if (_is_terminate){
+//        return static_cast<bptree_node_term*>(this)->_data;
+//    } else {
+//        std::vector<std::pair<const tkey, tvalue>> res;
+//        for(auto item : static_cast<bptree_node_middle*>(this)->_keys){
+//            res.emplace(item);
+//        }
+//    }
+//}
 
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -1151,12 +1165,6 @@ BP_tree<tkey, tvalue, compare, t>::merge_terminate(BP_tree::bptree_node_term *le
         parent->_pointers.push_back(new_node);
     }
 
-    if (parent->_pointers.size() > split_key_index + 1) {
-        parent->_pointers[split_key_index+1] = nullptr;
-    } else {
-        parent->_pointers.push_back(nullptr);
-    }
-
     _allocator.delete_object(left);
     _allocator.delete_object(right);
 }
@@ -1181,12 +1189,6 @@ void BP_tree<tkey, tvalue, compare, t>::merge_middle(BP_tree::bptree_node_middle
         parent->_pointers[split_key_index] = new_node;
     } else {
         parent->_pointers.push_back(new_node);
-    }
-
-    if (parent->_pointers.size() > split_key_index + 1) {
-        parent->_pointers[split_key_index+1] = nullptr;
-    } else {
-        parent->_pointers.push_back(nullptr);
     }
 
     _allocator.delete_object(left);
