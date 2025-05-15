@@ -1834,12 +1834,6 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
         parent->_pointers.push_back(new_node);
     }
 
-    if (parent->_pointers.size() > split_key_index + 1) {
-        parent->_pointers[split_key_index+1] = nullptr;
-    } else {
-        parent->_pointers.push_back(nullptr);
-    }
-
     _allocator.delete_object(left);
     _allocator.delete_object(right);
 }
