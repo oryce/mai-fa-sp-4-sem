@@ -1659,7 +1659,7 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
     if (cur_node == nullptr){
         return end();
     }
-
+  
     btree_iterator next(st, index);
     next++;
 
@@ -1850,6 +1850,7 @@ bool B_tree<tkey, tvalue, compare, t>::check_if_leaf(B_tree::btree_node * cur_no
     }
     return is_leaf;
 }
+
 
 // endregion modifiers implementation
 
