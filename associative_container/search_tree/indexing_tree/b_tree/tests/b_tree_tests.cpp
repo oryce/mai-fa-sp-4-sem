@@ -151,7 +151,6 @@ TEST(bTreePositiveTests, test1)
     };
 
     B_tree<int, std::string, std::less<int>, 3> tree(std::less<int>(), nullptr, logger.get());
-
     tree.emplace(1, std::string("a"));
     tree.emplace(2, std::string("b"));
     tree.emplace(15, std::string("c"));
@@ -507,12 +506,18 @@ TEST(bTreePositiveTests, test9)
 
     std::vector<B_tree<int, std::string>::value_type> expected_result =
     {
-        { 4, "e" },
-        { 15, "c" },
-        { 24, "g" },
-        { 45, "k" },
-        { 100, "f" },
-        { 101, "j" },
+            {1,   "a"},
+            {2,   "b"},
+            {3,   "d"},
+            {4,   "e"},
+            {15,  "c"},
+            {24,  "g"},
+            {45,  "k"},
+            {100, "f"},
+            {101, "j"},
+            {193, "l"},
+            {456, "h"},
+            {534, "m"}
     };
 
     B_tree<int, std::string, std::less<int>, 5> tree(std::less<int>(), nullptr, logger.get());
