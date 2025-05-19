@@ -593,7 +593,7 @@ namespace __detail {
     template<class ...Args>
     binary_search_tree<tkey, tvalue, compare, AVL_TAG>::node *bst_impl<tkey, tvalue, compare, AVL_TAG>::create_node(
             binary_search_tree<tkey, tvalue, compare, AVL_TAG> &cont, Args &&...args) {
-        typename AVL_tree<tkey, tvalue, compare>::node *n = cont._allocator.new_object<typename AVL_tree<tkey, tvalue, compare>::node>(
+        typename AVL_tree<tkey, tvalue, compare>::node *n = cont._allocator.template new_object<typename AVL_tree<tkey, tvalue, compare>::node>(
                 args ...);
         n->left_subtree = nullptr;
         n->right_subtree = nullptr;

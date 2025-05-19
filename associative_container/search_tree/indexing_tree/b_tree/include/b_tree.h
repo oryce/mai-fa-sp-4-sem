@@ -1659,7 +1659,7 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
     if (cur_node == nullptr){
         return end();
     }
-
+  
     btree_iterator next(st, index);
     next++;
 
@@ -1834,12 +1834,6 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
         parent->_pointers.push_back(new_node);
     }
 
-    if (parent->_pointers.size() > split_key_index + 1) {
-        parent->_pointers[split_key_index+1] = nullptr;
-    } else {
-        parent->_pointers.push_back(nullptr);
-    }
-
     _allocator.delete_object(left);
     _allocator.delete_object(right);
 }
@@ -1856,6 +1850,7 @@ bool B_tree<tkey, tvalue, compare, t>::check_if_leaf(B_tree::btree_node * cur_no
     }
     return is_leaf;
 }
+
 
 // endregion modifiers implementation
 
