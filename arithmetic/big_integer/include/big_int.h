@@ -166,6 +166,7 @@ public:
 
     friend big_int multiply_karatsuba(const big_int &a, const big_int &b);
 
+    friend big_int multiply_schonhage_strassen(big_int first, big_int second);
 };
 
 template<class alloc>

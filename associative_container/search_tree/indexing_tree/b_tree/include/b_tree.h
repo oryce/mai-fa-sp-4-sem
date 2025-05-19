@@ -372,6 +372,7 @@ public:
     void split(btree_node*, btree_node*);
     void merge(B_tree::btree_node*, B_tree::btree_node*, B_tree::btree_node*, size_t);
     static bool check_if_leaf(B_tree::btree_node*, size_t);
+    std::pair<size_t, bool> find_index(const tkey &key, B_tree::btree_node* node) const noexcept;
 
     // endregion modifiers declaration
 };
@@ -537,7 +538,7 @@ B_tree<tkey, tvalue, compare, t>& B_tree<tkey, tvalue, compare, t>::operator=(B_
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void B_tree<tkey, tvalue, compare, t>::go_to_previous(std::stack<std::pair<btree_node *, size_t>> & _path, size_t & _index) {
-    auto* cur_node = const_cast<B_tree::btree_node*>(_path.top().first);
+    auto* cur_node = _path.top().first;
     if (cur_node->_pointers.size() > _index && cur_node->_pointers[_index] != nullptr){
         //переходим в предыдущее поддерево
         _path.push(std::pair(cur_node->_pointers[_index], _index));
@@ -1471,7 +1472,14 @@ B_tree<tkey, tvalue, compare, t>::insert(const tree_data_type& data)
         if (node->_keys.size() == maximum_keys_in_node){
             node->_keys.insert(node->_keys.begin() + i, data);
             node->_pointers.insert(node->_pointers.begin() + i, nullptr);
-            split(node, parent_node);
+            while (node != nullptr && node->_keys.size() > maximum_keys_in_node) {
+                split(node, parent_node);
+                node = parent_node;
+                parent_node = path.empty() ? nullptr : path.top().first;
+                if (!path.empty()){
+                    path.pop();
+                }
+            }
         } else {
             node->_keys.insert(node->_keys.begin() + i, data);
             node->_pointers.insert(node->_pointers.begin() + i, nullptr);
@@ -1485,7 +1493,59 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 std::pair<typename B_tree<tkey, tvalue, compare, t>::btree_iterator, bool>
 B_tree<tkey, tvalue, compare, t>::insert(tree_data_type&& data)
 {
-    return insert(data);
+    size_t index_of_node_in_parent_node = 0;
+    B_tree<tkey, tvalue, compare, t>::btree_node *node = nullptr;
+    B_tree<tkey, tvalue, compare, t>::btree_node *parent_node = nullptr;
+    auto cur_pointer = _root;
+    std::stack<std::pair<btree_node*, size_t>> path = std::stack<std::pair<btree_node*, size_t>>();
+
+    if (_root == nullptr){
+        _root = _allocator.template new_object<B_tree::btree_node>();
+        _root->_keys.insert(_root->_keys.begin(), std::move(data));
+        _root->_pointers.insert(_root->_pointers.begin(), nullptr);
+    } else {
+        size_t i = 0;
+        while(cur_pointer != nullptr){
+            i = 0;
+            index_of_node_in_parent_node = 0;
+            for(; i < cur_pointer->_keys.size() &&
+                  compare_keys(cur_pointer->_keys[i].first, data.first); index_of_node_in_parent_node = i++){}
+
+            auto cur_key = cur_pointer->_keys[index_of_node_in_parent_node].first;
+
+            if (cur_key == data.first){
+                // уже есть в дереве
+                return std::pair<B_tree<tkey, tvalue, compare, t>::btree_iterator, bool>(end(), false);
+            }
+
+            parent_node = node;
+            node = cur_pointer;
+
+            if (i < cur_pointer->_pointers.size()){
+                cur_pointer = cur_pointer->_pointers[i];
+            } else {
+                cur_pointer = nullptr;
+            }
+            path.push(std::pair<btree_node*, size_t>(node, index_of_node_in_parent_node));
+        }
+        if (node->_keys.size() == maximum_keys_in_node){
+            node->_keys.insert(node->_keys.begin() + i, std::move(data));
+            node->_pointers.insert(node->_pointers.begin() + i, nullptr);
+            while (node != nullptr && node->_keys.size() > maximum_keys_in_node) {
+                split(node, parent_node);
+                node = parent_node;
+                parent_node = path.empty() ? nullptr : path.top().first;
+                if (!path.empty()){
+                    path.pop();
+                }
+            }
+        } else {
+            node->_keys.insert(node->_keys.begin() + i, std::move(data));
+            node->_pointers.insert(node->_pointers.begin() + i, nullptr);
+        }
+    }
+    _size++;
+    return std::pair<B_tree<tkey, tvalue, compare, t>::btree_iterator, bool>(B_tree<tkey, tvalue, compare, t>::btree_iterator(path, index_of_node_in_parent_node), true);
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -1574,44 +1634,43 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename B_tree<tkey, tvalue, compare, t>::btree_iterator
 B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
 {
-    size_t ind = 0;
+    size_t index = 0;
     size_t prev_index = 0;
     auto cur_node = _root;
     std::stack<std::pair<btree_node*, size_t>> st = std::stack<std::pair<btree_node*, size_t>>();
     B_tree<tkey, tvalue, compare, t>::btree_node* parent = nullptr;
     //находим нужный ключ
     while(cur_node != nullptr){
-        ind = 0;
-        for(; ind < cur_node->_keys.size() && compare_keys(cur_node->_keys[ind].first, key); ind++){}
+        index = 0;
+        for(; index < cur_node->_keys.size() && compare_keys(cur_node->_keys[index].first, key); index++){}
         st.push(std::pair<btree_node*, size_t>(cur_node, prev_index));
-        if (ind < cur_node->_keys.size() && cur_node->_keys[ind].first == key){
+        if (index < cur_node->_keys.size() && cur_node->_keys[index].first == key){
             break;
         }
 
         parent = cur_node;
-        if (ind >= cur_node->_pointers.size()){
+        if (index >= cur_node->_pointers.size()){
             return end();
         }
-        cur_node = cur_node->_pointers[ind];
-        prev_index = ind;
+        cur_node = cur_node->_pointers[index];
+        prev_index = index;
     }
 
     if (cur_node == nullptr){
         return end();
     }
-
-    btree_iterator next(st, ind);
+  
+    btree_iterator next(st, index);
     next++;
 
     //проверяем, является ли листом
-    bool is_leaf = check_if_leaf(cur_node, ind);
+    bool is_leaf = check_if_leaf(cur_node, index);
 
     //в зависимости от того лист или нет обрабатываем удаление
     tree_data_type* new_data;
     if (is_leaf){
-       delete_key_from_leaf(ind, cur_node, st);
+       delete_key_from_leaf(index, cur_node, st);
     } else {
-        size_t index;
         B_tree<tkey, tvalue, compare, t>::btree_node* n;
         // Заменяем самым правым элементом из левого поддерева
         // ВРОДЕ БЫ если элемент не лист, то левое поддерево у него должно быть всегда
@@ -1681,10 +1740,10 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
         node->_keys.erase(node->_keys.begin() + index_of_key);
         node->_pointers.erase(node->_pointers.begin() + index_of_key);
 
-        node->_keys.insert(node->_keys.begin(), parent->_keys[i]);
+        node->_keys.insert(node->_keys.begin(), parent->_keys[i - 1]);
         node->_pointers.push_back(nullptr);
 
-        parent->_keys[i] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
+        parent->_keys[i - 1] = parent->_pointers[i - 1]->_keys[size_left_sibling - 1];
 
         parent->_pointers[i - 1]->_keys.erase(parent->_pointers[i - 1]->_keys.begin() + size_left_sibling - 1);
         parent->_pointers[i - 1]->_pointers.erase(parent->_pointers[i - 1]->_pointers.begin() + size_left_sibling - 1);
@@ -1773,12 +1832,6 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
         parent->_pointers[split_key_index] = new_node;
     } else {
         parent->_pointers.push_back(new_node);
-    }
-
-    if (parent->_pointers.size() > split_key_index + 1) {
-        parent->_pointers[split_key_index+1] = nullptr;
-    } else {
-        parent->_pointers.push_back(nullptr);
     }
 
     _allocator.delete_object(left);
