@@ -47,6 +47,7 @@ private:
     static constexpr const size_t minimum_keys_in_node = t - 1;
     static constexpr const size_t maximum_keys_in_node = 2 * t - 1;
     static constexpr size_t maximum_pointers_in_node = maximum_keys_in_node + 1;
+    static constexpr size_t header_size = sizeof(size_t) * 3;
 
     // region comparators declaration
 
@@ -81,7 +82,7 @@ public:
     };
 
 
-private:
+public:
 
     friend btree_disk_node;
 
@@ -125,7 +126,7 @@ public:
     B_tree_disk(const B_tree_disk& other) =delete;
     B_tree_disk& operator=(const B_tree_disk& other) =delete;
 
-    ~B_tree_disk() noexcept = default;
+    ~B_tree_disk() noexcept;
 
     // endregion five declaration
 
@@ -186,7 +187,6 @@ public:
      * Updates value if key exists
      */
     bool update(const tree_data_type& data);
-
     /*
      * Return true if deleted
      */
@@ -213,7 +213,6 @@ private:
     void print_root_position() noexcept;
 
 };
-
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 size_t B_tree_disk<tkey, tvalue, compare, t>::btree_disk_const_iterator::depth() const noexcept {
@@ -682,19 +681,12 @@ void B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node::serialize(std::fstr
         _last_position_in_key_value_file += value.first.serialize_size() + value.second.serialize_size();
         stream.write(reinterpret_cast<const char*>(&positions_in_key_value_file[i]), sizeof(size_t));
     }
-//    for (; i < maximum_keys_in_node; i++){
-//        tree_data_type value = tree_data_type();
-//        value.first.serialize(stream_for_data);
-//        value.second.serialize(stream_for_data);
-//        positions_in_key_value_file[i] = _last_position_in_key_value_file;
-//        _last_position_in_key_value_file += value.first.serialize_size() + value.second.serialize_size();
-//    }
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 void B_tree_disk<tkey, tvalue, compare, t>::disk_write(btree_disk_node& node)
 {
-    _file_for_tree.seekg(node.position_in_disk * btree_disk_node::node_metadata_size);
+    _file_for_tree.seekg(header_size + node.position_in_disk * btree_disk_node::node_metadata_size);
     _file_for_key_value.seekg(btree_disk_node::_last_position_in_key_value_file);
     node.serialize(_file_for_tree, _file_for_key_value);
 }
@@ -738,7 +730,7 @@ typename B_tree_disk<tkey, tvalue, compare, t>::btree_disk_node B_tree_disk<tkey
         res.position_in_disk = SIZE_MAX;
         return res;
     }
-    _file_for_tree.seekg(node_position * btree_disk_node::node_metadata_size);
+    _file_for_tree.seekg(header_size + node_position * btree_disk_node::node_metadata_size);
     res = btree_disk_node::deserialize(_file_for_tree, _file_for_key_value);
     return res;
 }
@@ -771,26 +763,60 @@ bool B_tree_disk<tkey, tvalue, compare, t>::compare_keys(const tkey &lhs, const 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
 size_t B_tree_disk<tkey, tvalue, compare, t>::_count_of_node = 0;
 
+
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
-B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path, const compare& cmp, logger* logger):  compare(cmp)
-{
-    std::filesystem::path file_path_path = std::filesystem::path(file_path);
-    std::filesystem::path key_data_path = file_path_path.parent_path() / (file_path_path.stem().string()
-                                                                            + "key_value"
-                                                                            + file_path_path.extension().string());
-
-
-    std::ofstream(file_path_path, std::ios::binary).close();
-    std::ofstream(key_data_path, std::ios::binary).close();
-
-    _file_for_tree = std::fstream (file_path_path, std::ios::binary | std::ios::out | std::ios::in);
-    _file_for_key_value = std::fstream (key_data_path, std::ios::binary | std::ios::out | std::ios::in);
-    if (!_file_for_tree.is_open() /*|| !_file_for_key_value.is_open()*/){
-        throw std::runtime_error("incorrect file");
+B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path, const compare& cmp, logger* logger):  compare(cmp) {
+    std::filesystem::path file_metadata_path = std::filesystem::path(file_path);
+    std::filesystem::path key_data_path = file_metadata_path.parent_path() / (file_metadata_path.stem().string()
+                                                                              + "key_value"
+                                                                              + file_metadata_path.extension().string());
+    if (!std::filesystem::exists(key_data_path)) {
+        std::ofstream(key_data_path, std::ios::out).close();
     }
+
+    if (!std::filesystem::exists(file_metadata_path)) {
+        std::ofstream(file_metadata_path, std::ios::out).close();
+    }
+
     _logger = logger;
-    _position_root = SIZE_MAX;
-    _count_of_node = 0;
+
+    if (std::filesystem::file_size(file_metadata_path) > header_size){
+        _file_for_tree = std::fstream(file_metadata_path, std::ios::binary | std::ios::out | std::ios::in);
+        _file_for_key_value = std::fstream(key_data_path, std::ios::binary | std::ios::out | std::ios::in);
+        if (!_file_for_tree.is_open() || !_file_for_key_value.is_open()) {
+            throw std::runtime_error("incorrect file");
+        }
+        _file_for_tree.read(reinterpret_cast<char*>(&_position_root), sizeof(size_t));
+        _file_for_tree.read(reinterpret_cast<char*>(&_count_of_node), sizeof(size_t));
+        _file_for_tree.read(reinterpret_cast<char*>(&btree_disk_node::_last_position_in_key_value_file),
+                            sizeof(size_t));
+    } else {
+        _file_for_tree = std::fstream(file_metadata_path, std::ios::binary | std::ios::out | std::ios::in);
+        _file_for_key_value = std::fstream(key_data_path, std::ios::binary | std::ios::out | std::ios::in);
+        _position_root = SIZE_MAX;
+        _count_of_node = 0;
+        btree_disk_node::_last_position_in_key_value_file = 0;
+        _file_for_tree.write(reinterpret_cast<char *>(&_position_root), sizeof(size_t));
+        _file_for_tree.write(reinterpret_cast<char *>(&_count_of_node), sizeof(size_t));
+        _file_for_tree.write(reinterpret_cast<char *>(&btree_disk_node::_last_position_in_key_value_file),
+                             sizeof(size_t));
+
+    }
+    size_t t = 44;
+    _file_for_tree.seekg(0);
+    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
+    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
+    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
+}
+
+template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
+B_tree_disk<tkey, tvalue, compare, t>::~B_tree_disk() noexcept {
+    _file_for_tree.seekg(0);
+    _file_for_tree.write(reinterpret_cast<char*>(&_position_root), sizeof(size_t));
+    _file_for_tree.write(reinterpret_cast<char*>(&_count_of_node), sizeof(size_t));
+    _file_for_tree.write(reinterpret_cast<char*>(&btree_disk_node::_last_position_in_key_value_file), sizeof(size_t));
+    _file_for_tree.close();
+    _file_for_key_value.close();
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
