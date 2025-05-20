@@ -21,27 +21,100 @@ private:
     enum class block_color : unsigned char
     { RED, BLACK };
 
-    struct block_data
+    /* Отключаем выравнивание для структур блоков, иначе не будут проходить тесты. */
+#ifdef _MSC_VER
+#   pragma pack(push, 1)
+#endif
+
+    struct block_metadata
     {
         bool occupied : 4;
         block_color color : 4;
+
+        block_metadata* back_;
+        block_metadata* forward_;
+        /** Если |occupied| == true, это поле будет указывать на доверенную
+         * область памяти. Иначе на родителя в КЧД. */
+        void* parent_;
+
+        size_t get_size(void* trusted_memory)
+        {
+            if (forward_ != nullptr)
+            {
+                return reinterpret_cast<std::byte*>(forward_)
+                    - reinterpret_cast<std::byte*>(this)
+                    - sizeof(block_metadata);
+            }
+            else
+            {
+                const auto* alloc = static_cast<allocator_metadata*>(trusted_memory);
+
+                return static_cast<std::byte*>(trusted_memory)
+                    + sizeof(allocator_metadata)
+                    + alloc->size_
+                    - reinterpret_cast<std::byte*>(this)
+                    - sizeof(block_metadata);
+            }
+        }
+#if defined(__GNUC__) || defined(__clang__)
+    } __attribute__((packed));
+#else
+    };
+#endif
+
+    struct free_block_metadata : block_metadata
+    {
+        free_block_metadata* left_;
+        free_block_metadata* right_;
+
+        free_block_metadata* get_parent() const
+        {
+            return static_cast<free_block_metadata*>(parent_);
+        }
+
+        free_block_metadata* get_grandparent() const
+        {
+            const free_block_metadata* parent = get_parent();
+            return parent ? parent->get_parent() : nullptr;
+        }
+
+        free_block_metadata* get_sibling() const
+        {
+            const free_block_metadata* parent = get_parent();
+            if (!parent) return nullptr;
+            return this == parent->left_ ? parent->right_ : parent->left_;
+        }
+#if defined(__GNUC__) || defined(__clang__)
+    } __attribute__((packed));
+#else
+    };
+#endif
+
+#ifdef _MSC_VER
+#   pragma pack(pop)
+#endif
+
+    struct allocator_metadata
+    {
+        logger* logger_;
+        memory_resource* parent_allocator_;
+        fit_mode fit_mode_;
+        size_t size_;
+        std::mutex mutex_;
+        free_block_metadata* root_;
     };
 
     void *_trusted_memory;
-
-    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(allocator_dbg_helper*) + sizeof(fit_mode) + sizeof(size_t) + sizeof(std::mutex) + sizeof(void*);
-    static constexpr const size_t occupied_block_metadata_size = sizeof(block_data) + 3 * sizeof(void*);
-    static constexpr const size_t free_block_metadata_size = sizeof(block_data) + 5 * sizeof(void*);
 
 public:
     
     ~allocator_red_black_tree() override;
     
     allocator_red_black_tree(
-        allocator_red_black_tree const &other);
+        allocator_red_black_tree const &other) = delete;
     
     allocator_red_black_tree &operator=(
-        allocator_red_black_tree const &other);
+        allocator_red_black_tree const &other) = delete;
     
     allocator_red_black_tree(
         allocator_red_black_tree &&other) noexcept;
@@ -79,9 +152,30 @@ private:
 
     inline std::string get_typename() const noexcept override;
 
+    allocator_metadata* get_metadata() const noexcept
+    {
+        return static_cast<allocator_metadata*>(_trusted_memory);
+    }
+
+    inline free_block_metadata* get_first_free_block(size_t size) const noexcept;
+
+    inline free_block_metadata* get_best_free_block(size_t size) const noexcept;
+
+    inline free_block_metadata* get_worst_free_block(size_t size) const noexcept;
+
+    inline size_t available_memory() const noexcept;
+
+    void rb_tree_insert(free_block_metadata* z);
+
+    void rb_tree_remove(free_block_metadata* z);
+
+    inline void rb_small_left_rotation(free_block_metadata *&subtree_root);
+
+    inline void rb_small_right_rotation(free_block_metadata *&subtree_root);
+
     class rb_iterator
     {
-        void* _block_ptr;
+        block_metadata* _block_ptr;
         void* _trusted;
 
     public:
@@ -102,7 +196,7 @@ private:
 
         size_t size() const noexcept;
 
-        void* operator*() const noexcept;
+        block_metadata* operator*() const noexcept;
 
         bool occupied()const noexcept;
 
