@@ -82,7 +82,7 @@ public:
     };
 
 
-public:
+private:
 
     friend btree_disk_node;
 
