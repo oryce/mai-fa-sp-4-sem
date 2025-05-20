@@ -793,6 +793,9 @@ B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path,
     } else {
         _file_for_tree = std::fstream(file_metadata_path, std::ios::binary | std::ios::out | std::ios::in);
         _file_for_key_value = std::fstream(key_data_path, std::ios::binary | std::ios::out | std::ios::in);
+        if (!_file_for_tree.is_open() || !_file_for_key_value.is_open()) {
+            throw std::runtime_error("incorrect file");
+        }
         _position_root = SIZE_MAX;
         _count_of_node = 0;
         btree_disk_node::_last_position_in_key_value_file = 0;
@@ -802,11 +805,6 @@ B_tree_disk<tkey, tvalue, compare, t>::B_tree_disk(const std::string& file_path,
                              sizeof(size_t));
 
     }
-    size_t t = 44;
-    _file_for_tree.seekg(0);
-    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
-    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
-    _file_for_tree.read(reinterpret_cast<char*>(&t), sizeof(size_t));
 }
 
 template<serializable tkey, serializable tvalue, compator<tkey> compare, std::size_t t>
