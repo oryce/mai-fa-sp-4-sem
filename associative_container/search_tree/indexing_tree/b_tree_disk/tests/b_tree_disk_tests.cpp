@@ -8,7 +8,7 @@
 #include <random>
 #include <vector>
 #include <client_logger_builder.h>
-struct SerializableInt {
+struct SerializableInt  {
     int value;
 
     void serialize(std::fstream& s) const {
@@ -109,7 +109,7 @@ std::vector<test_data<tkey, tvalue>> const &expected_result)
 TEST(bTreeDiskPositiveTests, test1)
 {
 
-    B_tree_disk<SerializableInt, SerializableString> tree("temp.txt");
+    B_tree_disk<SerializableInt, SerializableString> tree("temp1.txt");
     std::vector<test_data<SerializableInt, SerializableString>> expected_result =
         {
                 test_data<SerializableInt, SerializableString>(1, 0, SerializableInt(1), SerializableString("a")),
@@ -120,7 +120,10 @@ TEST(bTreeDiskPositiveTests, test1)
                 test_data<SerializableInt, SerializableString>(1, 2, SerializableInt(27), SerializableString("f"))
         };
 
+
+
     tree.emplace(1, std::string("a"));
+    auto nnode = tree.disk_read(0);
     tree.emplace(2, std::string("b"));
     tree.emplace(15, std::string("c"));
     tree.emplace(3, std::string("d"));
@@ -134,7 +137,7 @@ TEST(bTreeDiskPositiveTests, test1)
 TEST(bTreeDiskPositiveTests, test2)
 {
 
-    B_tree_disk<SerializableInt, SerializableString, std::less<>, 3> tree("temp.txt");
+    B_tree_disk<SerializableInt, SerializableString, std::less<>, 3> tree("temp2.txt");
     std::vector<test_data<SerializableInt, SerializableString>> expected_result =
             {
                     test_data<SerializableInt, SerializableString>(1, 0, SerializableInt(1), SerializableString("a")),
@@ -157,7 +160,7 @@ TEST(bTreeDiskPositiveTests, test2)
 
 TEST(bTreeDiskPositiveTests, test3)
 {
-    B_tree_disk<SerializableInt, SerializableString, std::less<>, 4> tree("temp.txt");
+    B_tree_disk<SerializableInt, SerializableString, std::less<>, 4> tree("temp3.txt");
     std::vector<test_data<SerializableInt, SerializableString>> expected_result =
             {
                     test_data<SerializableInt, SerializableString>(1, 0, SerializableInt(2), SerializableString("b")),
@@ -191,6 +194,52 @@ TEST(bTreeDiskPositiveTests, test3)
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 }
 
+TEST(bTreeDiskPositiveTests, test4)
+{
+    std::vector<test_data<SerializableInt, SerializableString>> expected_result =
+            {
+                    test_data<SerializableInt, SerializableString>(1, 0, SerializableInt(2), SerializableString("b")),
+                    test_data<SerializableInt, SerializableString>(1, 1, SerializableInt(3), SerializableString("d")),
+                    test_data<SerializableInt, SerializableString>(1, 2, SerializableInt(4), SerializableString("e")),
+                    test_data<SerializableInt, SerializableString>(0, 0, SerializableInt(15), SerializableString("c")),
+                    test_data<SerializableInt, SerializableString>(1, 0, SerializableInt(45), SerializableString("k")),
+                    test_data<SerializableInt, SerializableString>(1, 1, SerializableInt(101), SerializableString("j")),
+                    test_data<SerializableInt, SerializableString>(1, 2, SerializableInt(456), SerializableString("h")),
+                    test_data<SerializableInt, SerializableString>(1, 3, SerializableInt(534), SerializableString("m"))
+            };
+    {
+        B_tree_disk<SerializableInt, SerializableString, std::less<>, 4> tree("temp_t.txt");
+        tree.emplace(SerializableInt(1), SerializableString("a"));
+        tree.emplace(SerializableInt(2), SerializableString("b"));
+        tree.emplace(SerializableInt(15), SerializableString("c"));
+        tree.emplace(SerializableInt(3), SerializableString("d"));
+        tree.emplace(SerializableInt(4), SerializableString("e"));
+        tree.emplace(SerializableInt(100), SerializableString("f"));
+        tree.emplace(SerializableInt(24), SerializableString("g"));
+        tree.emplace(SerializableInt(456), SerializableString("h"));
+        tree.emplace(SerializableInt(101), SerializableString("j"));
+        tree.emplace(SerializableInt(45), SerializableString("k"));
+        tree.emplace(SerializableInt(193), SerializableString("l"));
+        tree.emplace(SerializableInt(534), SerializableString("m"));
+
+
+    }
+    {
+        B_tree_disk<SerializableInt, SerializableString, std::less<>, 4> tree("temp_t.txt");
+        tree.erase(SerializableInt(1));
+        tree.erase(SerializableInt(100));
+        tree.erase(SerializableInt(193));
+        tree.erase(SerializableInt(24));
+    }
+    B_tree_disk<SerializableInt, SerializableString, std::less<>, 4> tree2("temp_t.txt");
+    auto it = tree2.begin();
+    auto end = tree2.end();
+    while(it != end){
+        auto n = *it;
+        it++;
+    }
+    EXPECT_TRUE(infix_const_iterator_test(tree2, expected_result));;
+}
 
 int main()
 {
