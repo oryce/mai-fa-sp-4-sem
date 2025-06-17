@@ -951,7 +951,7 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename B_tree<tkey, tvalue, compare, t>::btree_const_reverse_iterator&
 B_tree<tkey, tvalue, compare, t>::btree_const_reverse_iterator::operator++()
 {
-    go_to_prev(const_cast<std::stack<std::pair<btree_node*, size_t>>&>(_path), _index);
+    go_to_previous(const_cast<std::stack<std::pair<btree_node*, size_t>>&>(_path), _index);
     return *this;
 }
 
@@ -1424,10 +1424,6 @@ void B_tree<tkey, tvalue, compare, t>::split(B_tree::btree_node * node_to_split,
     parent_node->_keys.insert(parent_node->_keys.begin() + split_index_in_parent, node_to_split->_keys[middle_ind]);
     parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent, left_part);
     parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent + 1, right_part);
-
-    for(size_t i = parent_node->_keys.size() + 1; i < parent_node->_pointers.size(); i++){
-        parent_node->_pointers[i] = nullptr;
-    }
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -1443,6 +1439,7 @@ B_tree<tkey, tvalue, compare, t>::insert(const tree_data_type& data)
     if (_root == nullptr){
         _root = _allocator.template new_object<B_tree::btree_node>();
         _root->_keys.insert(_root->_keys.begin(), data);
+        _root->_pointers.insert(_root->_pointers.begin(), nullptr);
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
     } else {
         size_t i = 0;
@@ -1502,6 +1499,7 @@ B_tree<tkey, tvalue, compare, t>::insert(tree_data_type&& data)
     if (_root == nullptr){
         _root = _allocator.template new_object<B_tree::btree_node>();
         _root->_keys.insert(_root->_keys.begin(), std::move(data));
+        _root->_pointers.insert(_root->_pointers.begin(), nullptr);
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
     } else {
         size_t i = 0;
@@ -1649,9 +1647,6 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
         }
 
         parent = cur_node;
-        if (index >= cur_node->_pointers.size()){
-            return end();
-        }
         cur_node = cur_node->_pointers[index];
         prev_index = index;
     }
@@ -1708,19 +1703,7 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
             cur_node->_keys.erase(cur_node->_keys.begin() + index_of_key);
             cur_node->_pointers.erase(cur_node->_pointers.begin() + index_of_key);
         } else {
-            // в корне один элемент, удаляем его и делаем корнем одного из его потомков
-            if (cur_node->_pointers.size() > 0) {
-                if (cur_node->_pointers[0] != nullptr) {
-                    _root = cur_node->_pointers[0];
-                } else {
-                    if (cur_node->_pointers.size() > 1) {
-                        _root = cur_node->_pointers[1];
-                    } else {
-                        _root = nullptr;
-                    }
-                }
-                _allocator.delete_object(cur_node);
-            }
+             _root = nullptr;
         }
         return;
     }

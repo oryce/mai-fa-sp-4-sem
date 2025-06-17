@@ -547,7 +547,7 @@ TEST(bTreePositiveTests, test9)
     logger->trace("bTreePositiveTests.test9 finished");
 }
 
-TEST(bTreeNegativeTests, test1)
+TEST(bpTreeNegativeTests, test1)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
@@ -569,7 +569,7 @@ TEST(bTreeNegativeTests, test1)
     logger->trace("bTreeNegativeTests.test1 finished");
 }
 
-TEST(bTreeNegativeTests, test3)
+TEST(bpTreeNegativeTests, test3)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
