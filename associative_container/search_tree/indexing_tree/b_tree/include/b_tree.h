@@ -1686,10 +1686,9 @@ B_tree<tkey, tvalue, compare, t>::erase(const tkey& key)
             st.push(std::pair(n, tmp));
         }
         new_data = &n->_keys[n->_keys.size() - 1];
-        index = n->_keys.size() - 1;
 
         cur_node->_keys[index] = std::move(*new_data);
-        delete_key_from_leaf(index, n,st);
+        delete_key_from_leaf(n->_keys.size() - 1, n,st);
     }
     return next;
 }
