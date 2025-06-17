@@ -372,7 +372,6 @@ public:
     void split(btree_node*, btree_node*);
     void merge(B_tree::btree_node*, B_tree::btree_node*, B_tree::btree_node*, size_t);
     static bool check_if_leaf(B_tree::btree_node*, size_t);
-    std::pair<size_t, bool> find_index(const tkey &key, B_tree::btree_node* node) const noexcept;
 
     // endregion modifiers declaration
 };
@@ -473,7 +472,7 @@ B_tree<tkey, tvalue, compare, t>::B_tree(
     _allocator = alloc;
     _logger = logger;
     _size = 0;
-    for (std::pair<tkey, tvalue> p: data) {
+    for (std::pair<tkey, tvalue> p: data) {\
         insert(p);
     }
 }
@@ -1388,6 +1387,9 @@ void B_tree<tkey, tvalue, compare, t>::split(B_tree::btree_node * node_to_split,
     if (parent_node == nullptr) {
         //если сплитим корень, то нужно создать новый
         _root = _allocator.template new_object<B_tree::btree_node>();
+        if (_root == nullptr){
+            throw std::bad_alloc();
+        }
         parent_node = _root;
         split_index_in_parent = 0;
     } else {
@@ -1408,6 +1410,7 @@ void B_tree<tkey, tvalue, compare, t>::split(B_tree::btree_node * node_to_split,
         if (right_part != nullptr){
             _allocator.template delete_object<B_tree::btree_node>(right_part);
         }
+        throw std::bad_alloc();
     }
 
     const auto it_keys_begin = node_to_split->_keys.begin();
@@ -1438,6 +1441,9 @@ B_tree<tkey, tvalue, compare, t>::insert(const tree_data_type& data)
 
     if (_root == nullptr){
         _root = _allocator.template new_object<B_tree::btree_node>();
+        if (_root == nullptr){
+            throw std::bad_alloc();
+        }
         _root->_keys.insert(_root->_keys.begin(), data);
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
@@ -1498,6 +1504,9 @@ B_tree<tkey, tvalue, compare, t>::insert(tree_data_type&& data)
 
     if (_root == nullptr){
         _root = _allocator.template new_object<B_tree::btree_node>();
+        if (_root == nullptr){
+            throw std::bad_alloc();
+        }
         _root->_keys.insert(_root->_keys.begin(), std::move(data));
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
         _root->_pointers.insert(_root->_pointers.begin(), nullptr);
@@ -1800,6 +1809,9 @@ void B_tree<tkey, tvalue, compare, t>::delete_key_from_leaf(size_t index_of_key,
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::btree_node * right, B_tree::btree_node * parent, size_t split_key_index) {
     B_tree::btree_node *  new_node = _allocator.template new_object<B_tree::btree_node>();
+    if (new_node == nullptr){
+        throw std::bad_alloc();
+    }
     new_node->_keys = left->_keys;
     new_node->_pointers = left->_pointers;
     new_node->_keys.push_back(parent->_keys[split_key_index]);
@@ -1811,11 +1823,7 @@ void B_tree<tkey, tvalue, compare, t>::merge(B_tree::btree_node * left, B_tree::
     parent->_keys.erase(parent->_keys.begin() + split_key_index);
     parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
 
-    if (parent->_pointers.size() > split_key_index) {
-        parent->_pointers[split_key_index] = new_node;
-    } else {
-        parent->_pointers.push_back(new_node);
-    }
+    parent->_pointers[split_key_index] = new_node;
 
     _allocator.delete_object(left);
     _allocator.delete_object(right);
