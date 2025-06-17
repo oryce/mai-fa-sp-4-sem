@@ -564,7 +564,7 @@ std::pair<typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator, bool> BP_
         if (node_casted->_data.size() == maximum_keys_in_node){
             node_casted->_data.insert(node_casted->_data.begin() + i, data);
             split(cur_pointer, static_cast<bptree_node_middle*>(parent_node));
-            //not finished, this part should be decommented and implemented
+            //not finished, this part should be decommented and implemented correctly
 //            node->_pointers.insert(node->_d.begin() + i, nullptr);
 //            while (node != nullptr && node->_data.size() > maximum_keys_in_node) {
 //                split(node, parent_node);
@@ -592,6 +592,9 @@ void BP_tree<tkey, tvalue, compare, t>::split(BP_tree::bptree_node_base * node_t
     if (parent_is_null) {
         //если сплитим корень, то нужно создать новый
         _root = _allocator.template new_object<bptree_node_middle>();
+        if (_root == nullptr){
+            throw std::bad_alloc();
+        }
         parent_node = static_cast<bptree_node_middle*>(_root);
         split_index_in_parent = 0;
         _root->_is_terminate = false;
@@ -606,7 +609,7 @@ void BP_tree<tkey, tvalue, compare, t>::split(BP_tree::bptree_node_base * node_t
     }
     bptree_node_term * right_part = _allocator.template new_object<bptree_node_term>();
     if (right_part == nullptr){
-        return;
+        throw std::bad_alloc();
     }
 
     const auto it_keys_begin = node_to_split->_data.begin();
@@ -869,7 +872,6 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::find(const tkey& key)
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
     while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
@@ -881,7 +883,6 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
         } else {
             cur_node = cur_node_casted->_pointers[i];
         }
-        prev_i = i;
     }
 
     if (cur_node == nullptr){
@@ -901,7 +902,6 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_const_iterator BP_tree<tkey, tvalue, compare, t>::find(const tkey& key) const
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
     while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
@@ -913,7 +913,6 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_const_iterator BP_tree<tkey, 
         } else {
             cur_node = cur_node_casted->_pointers[i];
         }
-        prev_i = i;
     }
 
     if (cur_node == nullptr){
@@ -933,96 +932,120 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::lower_bound(const tkey& key)
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
-    std::stack<std::pair<bptree_node_base*, size_t>> st = std::stack<std::pair<bptree_node_base*, size_t>>();
-    st.push(std::pair<bptree_node_base*, size_t>(_root, 0));
-    while(cur_node != nullptr){
+    while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
-        for(; i < cur_node->_keys.size() && compare_keys(cur_node->_keys[i].first, key); i++){}
-        st.push(std::pair<bptree_node_base*, size_t>(cur_node, prev_i));
-        cur_node = cur_node->_pointers[i];
-        prev_i = i;
+        auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
+        for(; i < cur_node_casted->_keys.size() && compare_keys(cur_node_casted->_keys[i], key); i++){}
+
+        if (i == cur_node_casted->_keys.size() - 1 && key == cur_node_casted->_keys[i]){
+            cur_node = cur_node_casted->_pointers[i + 1];
+        } else {
+            cur_node = cur_node_casted->_pointers[i];
+        }
     }
-    if (st.size() == 1 && i == st.top().first->_keys.size()){
+
+    if (cur_node == nullptr){
         return end();
     } else {
-        //сейчас в st хранится путь до nullptr. Удаляем последний элемент, чтобы путь был до ноды, а не до nullptr
-        st.pop();
-        return bptree_iterator(st.top().first, prev_i);
+        auto cur_node_casted = static_cast<bptree_node_term*>(cur_node);
+        for(i = 0; i < cur_node_casted->_data.size() && compare_keys(cur_node_casted->_data[i].first, key); i++){}
+        if (i != cur_node_casted->_data.size()){
+            return bptree_iterator(cur_node_casted, i);
+        }
     }
+
+    return end();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_const_iterator BP_tree<tkey, tvalue, compare, t>::lower_bound(const tkey& key) const
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
-    std::stack<std::pair<bptree_node_base*, size_t>> st = std::stack<std::pair<bptree_node_base*, size_t>>();
-    st.push(std::pair<bptree_node_base*, size_t>(_root, 0));
-    while(cur_node != nullptr){
+    while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
-        for(; i < cur_node->_keys.size() && compare_keys(cur_node->_keys[i].first, key); i++){}
-        st.push(std::pair<bptree_node_base*, size_t>(cur_node, prev_i));
-        cur_node = cur_node->_pointers[i];
-        prev_i = i;
+        auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
+        for(; i < cur_node_casted->_keys.size() && compare_keys( cur_node_casted->_keys[i], key); i++){}
+
+        if (i == cur_node_casted->_keys.size() - 1 && key == cur_node_casted->_keys[i]){
+            cur_node = cur_node_casted->_pointers[i + 1];
+        } else {
+            cur_node = cur_node_casted->_pointers[i];
+        }
     }
-    if (st.size() == 1 && i == st.top().first->_keys.size()){
-        return end();
+
+    if (cur_node == nullptr){
+        return cend();
     } else {
-        //сейчас в st хранится путь до nullptr. Удаляем последний элемент, чтобы путь был до ноды, а не до nullptr
-        st.pop();
-        return bptree_const_iterator(st.top().first, prev_i);
+        auto cur_node_casted = static_cast<bptree_node_term*>(cur_node);
+        for(i = 0; i < cur_node_casted->_data.size() && compare_keys(cur_node_casted->_data[i].first, key); i++){}
+        if (i != cur_node_casted->_data.size()){
+            return bptree_const_iterator(cur_node_casted, i);
+        }
     }
+
+    return cend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue, compare, t>::upper_bound(const tkey& key)
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
-    std::stack<std::pair<bptree_node_base*, size_t>> st = std::stack<std::pair<bptree_node_base*, size_t>>();
-    st.push(std::pair<bptree_node_base*, size_t>(_root, 0));
-    while(cur_node != nullptr){
+    while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
-        for(; i < cur_node->_keys.size() && !compare_keys(key, cur_node->_keys[i].first); i++){}
-        st.push(std::pair<bptree_node_base*, size_t>(cur_node, prev_i));
-        cur_node = cur_node->_pointers[i];
-        prev_i = i;
+        auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
+        for(; i < cur_node_casted->_keys.size() && !compare_keys(key, cur_node_casted->_keys[i]); i++){}
+
+        if (i == cur_node_casted->_keys.size() - 1 && key == cur_node_casted->_keys[i]){
+            cur_node = cur_node_casted->_pointers[i + 1];
+        } else {
+            cur_node = cur_node_casted->_pointers[i];
+        }
     }
-    if (st.size() == 1 && i == st.top().first->_keys.size()){
+
+    if (cur_node == nullptr){
         return end();
     } else {
-        //сейчас в st хранится путь до nullptr. Удаляем последний элемент, чтобы путь был до ноды, а не до nullptr
-        st.pop();
-        return bptree_iterator(st.top().first, prev_i);
+        auto cur_node_casted = static_cast<bptree_node_term*>(cur_node);
+        for(i = 0; i < cur_node_casted->_data.size() && !compare_keys(key, cur_node_casted->_data[i].first); i++){}
+        if (i != cur_node_casted->_data.size()){
+            return bptree_iterator(cur_node_casted, i);
+        }
     }
+
+    return end();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 typename BP_tree<tkey, tvalue, compare, t>::bptree_const_iterator BP_tree<tkey, tvalue, compare, t>::upper_bound(const tkey& key) const
 {
     size_t i = 0;
-    size_t prev_i = 0;
     auto cur_node = _root;
-    std::stack<std::pair<bptree_node_base*, size_t>> st = std::stack<std::pair<bptree_node_base*, size_t>>();
-    st.push(std::pair<bptree_node_base*, size_t>(_root, 0));
-    while(cur_node != nullptr){
+    while(cur_node != nullptr && !cur_node->_is_terminate){
         i = 0;
-        for(; i < cur_node->_keys.size() && !compare_keys(key, cur_node->_keys[i].first); i++){}
-        st.push(std::pair<bptree_node_base*, size_t>(cur_node, prev_i));
-        cur_node = cur_node->_pointers[i];
-        prev_i = i;
+        auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
+        for(; i < cur_node_casted->_keys.size() && !compare_keys(key, cur_node_casted->_keys[i]); i++){}
+
+        if (i == cur_node_casted->_keys.size() - 1 && key == cur_node_casted->_keys[i]){
+            cur_node = cur_node_casted->_pointers[i + 1];
+        } else {
+            cur_node = cur_node_casted->_pointers[i];
+        }
     }
-    if (st.size() == 1 && i == st.top().first->_keys.size()){
-        return end();
+
+    if (cur_node == nullptr){
+        return cend();
     } else {
-        //сейчас в st хранится путь до nullptr. Удаляем последний элемент, чтобы путь был до ноды, а не до nullptr
-        st.pop();
-        return bptree_const_iterator(st.top().first, prev_i);
+        auto cur_node_casted = static_cast<bptree_node_term*>(cur_node);
+        for(i = 0; i < cur_node_casted->_data.size() && !compare_keys(key, cur_node_casted->_data[i].first); i++){}
+        if (i != cur_node_casted->_data.size()){
+            return bptree_const_iterator(cur_node_casted, i);
+        }
     }
+
+    return cend();
 }
 
 template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
@@ -1313,6 +1336,9 @@ void
 BP_tree<tkey, tvalue, compare, t>::merge_terminate(BP_tree::bptree_node_term *left, BP_tree::bptree_node_term *right,
                                                    BP_tree::bptree_node_middle *parent, size_t split_key_index) {
     bptree_node_term *  new_node = _allocator.template new_object<bptree_node_term>();
+    if (new_node == nullptr){
+        throw std::bad_alloc();
+    }
     new_node->_data = left->_data;
 
     new_node->_data.insert(new_node->_data.end(), right->_data.begin(), right->_data.end());
@@ -1320,11 +1346,7 @@ BP_tree<tkey, tvalue, compare, t>::merge_terminate(BP_tree::bptree_node_term *le
     parent->_keys.erase(parent->_keys.begin() + split_key_index);
     parent->_pointers.erase(parent->_pointers.begin() + split_key_index);
 
-    if (parent->_pointers.size() > split_key_index) {
-        parent->_pointers[split_key_index] = new_node;
-    } else {
-        parent->_pointers.push_back(new_node);
-    }
+    parent->_pointers[split_key_index] = new_node;
 
     _allocator.delete_object(left);
     _allocator.delete_object(right);
@@ -1335,6 +1357,9 @@ template<typename tkey, typename tvalue, compator<tkey> compare, std::size_t t>
 void BP_tree<tkey, tvalue, compare, t>::merge_middle(BP_tree::bptree_node_middle * left, BP_tree::bptree_node_middle * right,
                                                         bptree_node_middle * parent, size_t split_key_index) {
     bptree_node_middle *  new_node = _allocator.template new_object<bptree_node_middle>();
+    if (new_node == nullptr){
+        throw std::bad_alloc();
+    }
     new_node->_keys = left->_keys;
     new_node->_pointers = left->_pointers;
     new_node->_keys.push_back(parent->_keys[split_key_index]);
