@@ -250,6 +250,10 @@ TEST(bpTreePositiveTests, test3)
     tree.emplace(193, std::string("l"));
     tree.emplace(534, std::string("m"));
 
+    auto a = tree.lower_bound(4);
+    auto b = tree.upper_bound(4);
+    EXPECT_EQ(a->first, 4);
+    EXPECT_EQ(b->first, 15);
     EXPECT_TRUE(infix_const_iterator_test(tree, expected_result));
 
     logger->trace("bpTreePositiveTests.test3 finished");
@@ -547,7 +551,7 @@ TEST(bTreePositiveTests, test9)
     logger->trace("bTreePositiveTests.test9 finished");
 }
 
-TEST(bTreeNegativeTests, test1)
+TEST(bpTreeNegativeTests, test1)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
@@ -569,7 +573,7 @@ TEST(bTreeNegativeTests, test1)
     logger->trace("bTreeNegativeTests.test1 finished");
 }
 
-TEST(bTreeNegativeTests, test3)
+TEST(bpTreeNegativeTests, test3)
 {
     std::unique_ptr<logger> logger( create_logger(std::vector<std::pair<std::string, logger::severity>>
                                                           {
