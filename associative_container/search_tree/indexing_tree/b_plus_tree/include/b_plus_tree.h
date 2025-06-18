@@ -599,8 +599,8 @@ void BP_tree<tkey, tvalue, compare, t>::split_terminate(BP_tree::bptree_node_bas
     auto node_to_split = static_cast<bptree_node_term*>(node_to_split_base);
     tkey middle_key = node_to_split->_data[middle_ind].first;
     size_t split_index_in_parent;
-    bool parent_is_null = parent_node == nullptr;
-    if (parent_is_null) {
+    bool parent_created = parent_node == nullptr;
+    if (parent_created) {
         //если сплитим корень, то нужно создать новый
         _root = _allocator.template new_object<bptree_node_middle>();
         if (_root == nullptr){
@@ -635,7 +635,7 @@ void BP_tree<tkey, tvalue, compare, t>::split_terminate(BP_tree::bptree_node_bas
 
     parent_node->_keys.insert(parent_node->_keys.begin() + split_index_in_parent, node_to_split->_data[middle_ind].first);
 
-    if (parent_is_null){
+    if (parent_created){
         parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent, node_to_split);
     }
     parent_node->_pointers.insert(parent_node->_pointers.begin() + split_index_in_parent + 1, right_part);
@@ -1234,18 +1234,10 @@ typename BP_tree<tkey, tvalue, compare, t>::bptree_iterator BP_tree<tkey, tvalue
     bptree_node_base *parent = nullptr;
     //находим нужный ключ
     while(!cur_node->_is_terminate){
-
         auto cur_node_casted = static_cast<bptree_node_middle*>(cur_node);
         for(index = 0; index < cur_node_casted->_keys.size() && compare_keys(cur_node_casted->_keys[index], key); index++){}
         st.push(std::pair(cur_node, prev_index));
-        if (index < cur_node_casted->_keys.size() && cur_node_casted->_keys[index] == key){
-            break;
-        }
-
         parent = cur_node;
-        if (index >= cur_node_casted->_pointers.size()){
-            return end();
-        }
         cur_node = cur_node_casted->_pointers[index];
         prev_index = index;
     }
